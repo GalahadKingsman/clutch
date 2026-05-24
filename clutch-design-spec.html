@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLUTCH — дизайн-спецификация (handoff)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#4D7CFF;--blue-d:#2E51C4;--blue-soft:rgba(77,124,255,.14);
+    --red:#FF5C5C;--red-soft:rgba(255,92,92,.13);
+    --gold:#FFC93D;--gold-d:#C9930F;--gold-soft:rgba(255,201,61,.13);
+    --green:#39d98a;--green-soft:rgba(57,217,138,.13);
+    --ink:#F4F3FA;--mut:#928FA6;--mut2:#6E6B80;
+    --bg:#0E0D14;--panel:#1A1825;--panel2:#211E2D;--line:rgba(255,255,255,.08);
+    --f:'Manrope',sans-serif;--disp:'Unbounded',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:var(--f);color:var(--ink);min-height:100vh;padding:46px 26px 80px;
+    background:radial-gradient(900px 600px at 50% -6%,rgba(77,124,255,.10),transparent 60%),#0A0910;}
+
+  .doc{max-width:1180px;margin:0 auto;}
+  .doc-head .logo{font-family:var(--disp);font-weight:800;font-size:34px;color:#fff;display:flex;align-items:center;gap:5px;}
+  .doc-head .logo .d{width:10px;height:10px;border-radius:50%;background:var(--blue);margin-top:16px;box-shadow:0 0 14px var(--blue);}
+  .doc-head .sub{color:var(--mut);font-size:16px;font-weight:600;margin-top:12px;max-width:720px;line-height:1.55;}
+  .doc-head .sub b{color:var(--ink);}
+
+  h2.sec{font-family:var(--disp);font-weight:700;font-size:18px;margin:54px 0 8px;color:#fff;}
+  .sec-d{color:var(--mut);font-size:14px;font-weight:600;margin-bottom:22px;}
+
+  /* ===== FLOW MAP ===== */
+  .flow{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:26px;overflow-x:auto;}
+  .flow-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+  .fbox{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:11px 15px;font-weight:700;font-size:13.5px;white-space:nowrap;cursor:pointer;transition:.15s;}
+  .fbox:hover{border-color:var(--blue);transform:translateY(-2px);}
+  .fbox small{display:block;color:var(--mut);font-size:11px;font-weight:600;margin-top:2px;}
+  .fbox.a{border-color:rgba(77,124,255,.4);}
+  .fbox.g{border-color:rgba(255,201,61,.4);}
+  .farr{color:var(--mut2);font-weight:800;font-size:18px;}
+  .fnote{color:var(--mut);font-size:12.5px;font-weight:600;margin-top:14px;}
+  .fnote b{color:var(--gold);}
+
+  /* ===== SCREEN BLOCK (artboard + notes) ===== */
+  .screen{display:flex;gap:34px;align-items:flex-start;flex-wrap:wrap;margin-bottom:46px;padding-top:8px;scroll-margin-top:30px;border-radius:30px;transition:box-shadow .3s;}
+  .screen.flash{box-shadow:0 0 0 3px var(--blue),0 0 40px rgba(77,124,255,.4);}
+  .art{width:330px;flex-shrink:0;}
+  .art-tag{font-weight:800;font-size:15px;margin-bottom:3px;}
+  .art-tag span{color:var(--blue);}
+  .art-purpose{color:var(--mut);font-size:13px;font-weight:600;margin-bottom:14px;line-height:1.4;}
+
+  .phone{width:330px;background:#050409;border-radius:42px;padding:10px;
+    box-shadow:0 32px 70px rgba(0,0,0,.55),inset 0 0 0 1px rgba(255,255,255,.06);position:relative;}
+  .scr{position:relative;border-radius:34px;overflow:hidden;display:flex;flex-direction:column;padding:24px 16px 14px;min-height:600px;
+    background:linear-gradient(180deg,#16141F,#0F0E16 60%,#16141F);}
+  .sb{position:absolute;top:13px;left:0;right:0;display:flex;justify-content:space-between;padding:0 24px;font-size:11px;font-weight:700;opacity:.8;z-index:9;}
+  .sb .dd{display:flex;gap:3px;}.sb .dd i{width:4px;height:4px;border-radius:50%;background:#fff;opacity:.5;}
+
+  /* annotation pin */
+  .pin{position:absolute;width:22px;height:22px;border-radius:50%;background:var(--blue);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;z-index:20;box-shadow:0 2px 8px rgba(0,0,0,.5);border:2px solid #0F0E16;}
+
+  /* notes */
+  .notes{flex:1;min-width:280px;max-width:420px;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:20px 22px;}
+  .notes h4{font-size:13px;font-weight:800;color:var(--mut);letter-spacing:.5px;text-transform:uppercase;margin-bottom:14px;}
+  .note{display:flex;gap:11px;margin-bottom:14px;}
+  .note .num{flex-shrink:0;width:22px;height:22px;border-radius:50%;background:var(--blue-soft);color:var(--blue);font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;border:1px solid rgba(77,124,255,.3);}
+  .note .nt{font-size:13.5px;font-weight:600;line-height:1.45;color:#d7d5e4;}
+  .note .nt b{color:#fff;font-weight:800;}
+  .goto{color:var(--blue);font-weight:700;cursor:pointer;border-bottom:1px dashed rgba(77,124,255,.5);}
+  .goto:hover{color:#86a6ff;}
+  .tip{margin-top:6px;background:var(--gold-soft);border:1px solid rgba(255,201,61,.3);border-radius:12px;padding:10px 12px;font-size:12.5px;font-weight:600;color:#ffdf9b;line-height:1.4;}
+
+  /* ====== shared in-app components ====== */
+  .lbl{font-size:11px;font-weight:800;color:var(--mut);letter-spacing:.6px;text-transform:uppercase;}
+  .htitle{font-weight:800;font-size:21px;letter-spacing:-.4px;}
+  .x{width:34px;height:34px;border-radius:11px;background:var(--panel2);display:flex;align-items:center;justify-content:center;color:var(--mut);font-size:14px;border:1px solid var(--line);}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:13px 14px;}
+  .btn{border:none;width:100%;border-radius:16px;padding:15px;font-family:var(--f);font-weight:800;font-size:16px;cursor:pointer;color:#fff;}
+  .btn.blue{background:linear-gradient(180deg,#5C88FF,#4068E8);box-shadow:0 5px 0 var(--blue-d);}
+  .btn.gold{background:linear-gradient(180deg,#FFD45C,#F2B01E);color:#3a2600;box-shadow:0 5px 0 var(--gold-d);}
+  .btn.green{background:linear-gradient(180deg,#4ee3a0,#27b97e);color:#053022;box-shadow:0 5px 0 #1c8a5e;}
+  .btn.ghost{background:var(--panel2);color:var(--ink);border:1px solid var(--line);box-shadow:0 5px 0 #0c0b12;}
+  .btn.sm{font-size:14px;padding:12px;border-radius:14px;}
+  .ava{border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+  .pill{display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:5px 11px;font-size:12px;font-weight:700;}
+
+  /* bottom nav */
+  .nav{position:absolute;left:10px;right:10px;bottom:10px;height:62px;background:rgba(20,18,28,.92);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:22px;display:flex;align-items:center;justify-content:space-around;padding:0 8px;z-index:15;}
+  .ni{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--mut2);font-size:9.5px;font-weight:700;cursor:pointer;}
+  .ni svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  .ni.on{color:var(--blue);}
+  .ni.plus{width:50px;height:50px;border-radius:16px;background:linear-gradient(180deg,#5C88FF,#4068E8);color:#fff;justify-content:center;box-shadow:0 6px 18px rgba(77,124,255,.45);margin-top:-18px;}
+  .ni.plus svg{width:26px;height:26px;stroke-width:2.6;}
+  .has-nav{padding-bottom:84px;}
+
+  .footdoc{margin-top:40px;color:var(--mut);font-size:14px;font-weight:600;line-height:1.7;border-top:1px solid var(--line);padding-top:24px;}
+  .footdoc b{color:var(--ink);}
+  .footdoc ul{margin:10px 0 0 18px;}
+  .footdoc li{margin-bottom:7px;}
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <div class="doc-head">
+    <div class="logo">clutch<span class="d"></span></div>
+    <div class="sub"><b>Дизайн-спецификация для разработки.</b> Каждый экран в финальном стиле, рядом — нумерованные пояснения и навигация (что делает кнопка и куда ведёт). Кликай по синим ссылкам и блокам карты — страница перематывается к нужному экрану.</div>
+  </div>
+
+  <!-- ===================== FLOW MAP ===================== -->
+  <h2 class="sec">Карта экранов и навигация</h2>
+  <div class="sec-d">Архитектура приложения и основные переходы. Нижнее меню (таб-бар) доступно на 4 главных вкладках.</div>
+  <div class="flow">
+    <div class="flow-row">
+      <div class="fbox" data-goto="s-feed">🏠 Лента<small>главная</small></div>
+      <span class="farr">→</span>
+      <div class="fbox" data-goto="s-create">➕ Создать дуэль<small>условие + ставка</small></div>
+      <span class="farr">→</span>
+      <div class="fbox" data-goto="s-friends">👥 Выбор соперника<small>из друзей</small></div>
+      <span class="farr">→</span>
+      <div class="fbox g" data-goto="s-room">💬 Комната дуэли<small>ожидание/чат</small></div>
+    </div>
+    <div class="flow-row" style="margin-top:16px;">
+      <div class="fbox a" data-goto="s-invite">📨 Сопернику: вызов<small>принять/отклонить</small></div>
+      <span class="farr">→</span>
+      <div class="fbox g" data-goto="s-room">💬 Комната (активна)<small>спор + дедлайн</small></div>
+      <span class="farr">→</span>
+      <div class="fbox" data-goto="s-arb">⚖️ Арбитраж<small>если не согласны</small></div>
+      <span class="farr">→</span>
+      <div class="fbox g" data-goto="s-win">🏆 Вердикт<small>выплата</small></div>
+    </div>
+    <div class="fnote">Таб-бар: <b>Лента · Друзья · ➕ · Кошелёк · Профиль.</b> Центральная кнопка ➕ всегда открывает «Создать дуэль». Дуэль может быть и групповой (несколько соперников).</div>
+  </div>
+
+  <!-- ===================== 1. FEED ===================== -->
+  <h2 class="sec">Экраны</h2>
+  <div class="sec-d">Кнопки и элементы помечены кружками ①②③… — расшифровка справа.</div>
+
+  <div class="screen" id="s-feed">
+    <div class="art">
+      <div class="art-tag">01 · <span>Лента (Главная)</span></div>
+      <div class="art-purpose">Точка входа. Баланс, активные дуэли, активность друзей, быстрый старт.</div>
+      <div class="phone"><div class="scr has-nav">
+        <div class="sb"><span>9:41</span><span class="dd"><i></i><i></i><i></i></span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;">
+          <div><div class="lbl">Привет, Ник</div><div class="htitle" style="margin-top:2px;">Лента</div></div>
+          <div class="pill" data-goto="s-wallet" style="cursor:pointer;position:relative;">💰 $245.00<span class="pin" style="top:-10px;right:-10px;">1</span></div>
+        </div>
+
+        <div class="lbl" style="margin-top:18px;">Твои активные дуэли</div>
+        <div class="card" data-goto="s-room" style="margin-top:10px;cursor:pointer;position:relative;border-color:rgba(255,201,61,.35);">
+          <span class="pin" style="top:-9px;left:-9px;">2</span>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-weight:800;font-size:14px;">Ты vs Саша</div>
+            <div style="color:var(--gold);font-weight:800;font-size:13px;">⏱ 1:12:40</div>
+          </div>
+          <div style="color:var(--mut);font-size:12.5px;font-weight:600;margin-top:6px;line-height:1.35;">«Саша опоздает на созвон в 20:00» · банк $50</div>
+        </div>
+        <div class="card" style="margin-top:9px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-weight:800;font-size:14px;">Ты vs Лёша</div>
+            <div style="color:var(--blue);font-weight:800;font-size:12px;">ждёт ответа</div>
+          </div>
+          <div style="color:var(--mut);font-size:12.5px;font-weight:600;margin-top:6px;">«Барса выиграет дерби» · банк $40</div>
+        </div>
+
+        <div class="lbl" style="margin-top:18px;">Друзья спорят</div>
+        <div class="card" style="margin-top:10px;display:flex;gap:10px;align-items:center;">
+          <div class="ava" style="width:36px;height:36px;background:linear-gradient(160deg,#6E97FF,#4068E8);">🐱</div>
+          <div style="font-size:12.5px;font-weight:600;color:#d7d5e4;line-height:1.35;">Макс выиграл у Кати <b style="color:var(--green)">+$30</b> · спор о фильме 🎬</div>
+        </div>
+
+        <div class="nav">
+          <div class="ni on"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Лента</div>
+          <div class="ni" data-goto="s-friends"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0M16 7a3 3 0 0 1 0 6M21 20a5 5 0 0 0-4-4.9"/></svg>Друзья</div>
+          <div class="ni plus" data-goto="s-create"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
+          <div class="ni" data-goto="s-wallet"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M16 12h2"/></svg>Кошелёк</div>
+          <div class="ni" data-goto="s-profile"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Профиль</div>
+        </div>
+      </div></div>
+    </div>
+    <div class="notes">
+      <h4>Лента — взаимодействия</h4>
+      <div class="note"><div class="num">1</div><div class="nt"><b>Баланс</b> (тап) → <span class="goto" data-goto="s-wallet">Кошелёк</span>. Показывает доступные USDT.</div></div>
+      <div class="note"><div class="num">2</div><div class="nt"><b>Карточка активной дуэли</b> (тап) → <span class="goto" data-goto="s-room">Комната дуэли</span>. Статус: таймер / «ждёт ответа» / «на арбитраже».</div></div>
+      <div class="note"><div class="num">＋</div><div class="nt">Центральная кнопка таб-бара → <span class="goto" data-goto="s-create">Создать дуэль</span>.</div></div>
+      <div class="tip">Лента — это «домой». Сюда возвращаемся после любого действия. Лента активности друзей создаёт виральность и FOMO.</div>
+    </div>
+  </div>
+
+  <!-- ===================== 2. FRIENDS ===================== -->
+  <div class="screen" id="s-friends">
+    <div class="art">
+      <div class="art-tag">02 · <span>Друзья</span></div>
+      <div class="art-purpose">Список друзей в приложении. Отсюда выбираешь, с кем спорить, и приглашаешь новых.</div>
+      <div class="phone"><div class="scr has-nav">
+        <div class="sb"><span>9:41</span><span class="dd"><i></i><i></i><i></i></span></div>
+        <div class="htitle" style="margin-top:12px;">Друзья</div>
+        <div class="card" style="margin-top:14px;display:flex;align-items:center;gap:9px;color:var(--mut);font-size:14px;font-weight:600;position:relative;">
+          <svg width="16" height="16" viewBox="0 0 24 24" stroke="#928FA6" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg> Поиск друга…
+        </div>
+
+        <div class="card" data-goto="s-create" style="margin-top:14px;display:flex;align-items:center;gap:11px;cursor:pointer;position:relative;">
+          <span class="pin" style="top:-9px;left:-9px;">1</span>
+          <div class="ava" style="width:40px;height:40px;background:linear-gradient(160deg,#FF7B6B,#E8483F);">🦊</div>
+          <div style="flex:1;"><div style="font-weight:800;font-size:14.5px;">Саша</div><div style="color:var(--mut);font-size:12px;font-weight:600;">8–9 · Серебро</div></div>
+          <div class="btn blue sm" style="width:auto;padding:9px 14px;">Вызов</div>
+        </div>
+        <div class="card" style="margin-top:9px;display:flex;align-items:center;gap:11px;">
+          <div class="ava" style="width:40px;height:40px;background:linear-gradient(160deg,#6E97FF,#4068E8);">🐱</div>
+          <div style="flex:1;"><div style="font-weight:800;font-size:14.5px;">Лёша</div><div style="color:var(--mut);font-size:12px;font-weight:600;">14–6 · Золото</div></div>
+          <div class="btn blue sm" style="width:auto;padding:9px 14px;">Вызов</div>
+        </div>
+        <div class="card" style="margin-top:9px;display:flex;align-items:center;gap:11px;">
+          <div class="ava" style="width:40px;height:40px;background:linear-gradient(160deg,#b06bff,#7d3ad9);">🐸</div>
+          <div style="flex:1;"><div style="font-weight:800;font-size:14.5px;">Катя</div><div style="color:var(--mut);font-size:12px;font-weight:600;">3–2 · Бронза</div></div>
+          <div class="btn blue sm" style="width:auto;padding:9px 14px;">Вызов</div>
+        </div>
+
+        <div class="lbl" style="margin-top:20px;">Ещё не в CLUTCH</div>
+        <button class="btn ghost" style="margin-top:10px;position:relative;"><span class="pin" style="top:-9px;right:-9px;">2</span>🔗 Пригласить по ссылке</button>
+
+        <div class="nav">
+          <div class="ni" data-goto="s-feed"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Лента</div>
+          <div class="ni on"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0M16 7a3 3 0 0 1 0 6M21 20a5 5 0 0 0-4-4.9"/></svg>Друзья</div>
+          <div class="ni plus" data-goto="s-create"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
+          <div class="ni" data-goto="s-wallet"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M16 12h2"/></svg>Кошелёк</div>
+          <div class="ni" data-goto="s-profile"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Профиль</div>
+        </div>
+      </div></div>
+    </div>
+    <div class="notes">
+      <h4>Друзья — взаимодействия</h4>
+      <div class="note"><div class="num">1</div><div class="nt"><b>«Вызов»</b> или тап по другу → <span class="goto" data-goto="s-create">Создать дуэль</span> с этим соперником, уже подставленным.</div></div>
+      <div class="note"><div class="num">2</div><div class="nt"><b>«Пригласить по ссылке»</b> — генерирует инвайт (Telegram/ссылка). Пришедший по ссылке попадает сюда в список. Это главный канал роста.</div></div>
+      <div class="tip">У каждого друга видно его рекорд и ранг — это подогревает желание «вызвать сильного». Поиск — для больших списков.</div>
+    </div>
+  </div>
+
+  <!-- ===================== 3. CREATE ===================== -->
+  <div class="screen" id="s-create">
+    <div class="art">
+      <div class="art-tag">03 · <span>Создать дуэль</span></div>
+      <div class="art-purpose">Любой спор: своё условие, ручной ввод ставки, свои две стороны, дедлайн.</div>
+      <div class="phone"><div class="scr">
+        <div class="sb"><span>9:41</span><span class="dd"><i></i><i></i><i></i></span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;"><div class="htitle">Новая дуэль</div><div class="x" data-goto="s-feed" style="cursor:pointer;">✕</div></div>
+
+        <div class="lbl" style="margin-top:16px;">Соперник</div>
+        <div style="display:flex;gap:9px;align-items:center;margin-top:9px;position:relative;">
+          <span class="pin" style="top:-9px;left:-9px;">1</span>
+          <div class="card" style="display:flex;align-items:center;gap:9px;padding:8px 14px 8px 8px;border-color:rgba(255,92,92,.3);background:var(--red-soft);">
+            <div class="ava" style="width:34px;height:34px;background:linear-gradient(160deg,#FF7B6B,#E8483F);">🦊</div><span style="font-weight:700;">Саша</span>
+          </div>
+          <div class="x" data-goto="s-friends" style="cursor:pointer;border-style:dashed;">+</div>
+        </div>
+
+        <div class="lbl" style="margin-top:15px;">Условие спора</div>
+        <div class="card" style="margin-top:8px;font-size:14.5px;font-weight:600;line-height:1.4;">Саша опоздает на созвон сегодня<span style="color:var(--blue);font-weight:800;">|</span></div>
+
+        <div class="lbl" style="margin-top:15px;position:relative;">Ставка с каждого <span class="pin" style="top:-6px;right:-2px;">2</span></div>
+        <div class="card" style="margin-top:8px;text-align:center;padding:16px;">
+          <div style="font-family:var(--disp);font-weight:800;font-size:32px;">$25<span style="color:var(--blue);">|</span><span style="font-size:15px;color:var(--mut);"> USDT</span></div>
+        </div>
+        <div style="display:flex;gap:7px;margin-top:8px;">
+          <div class="pill" style="flex:1;justify-content:center;">$10</div>
+          <div class="pill" style="flex:1;justify-content:center;border-color:var(--gold);color:var(--gold);">$25</div>
+          <div class="pill" style="flex:1;justify-content:center;">$50</div>
+          <div class="pill" style="flex:1;justify-content:center;">$100</div>
+        </div>
+
+        <div class="lbl" style="margin-top:15px;position:relative;">Стороны спора <span class="pin" style="top:-6px;right:-2px;">3</span></div>
+        <div style="display:flex;gap:9px;margin-top:8px;">
+          <div class="card" style="flex:1;text-align:center;border-color:var(--blue);background:var(--blue-soft);"><div style="font-size:10px;color:var(--blue);font-weight:800;">ТЫ</div><div style="font-weight:700;font-size:13px;margin-top:3px;">Опоздает</div></div>
+          <div class="card" style="flex:1;text-align:center;"><div style="font-size:10px;color:var(--mut);font-weight:800;">САША</div><div style="font-weight:700;font-size:13px;margin-top:3px;color:var(--mut);">Успеет</div></div>
+        </div>
+
+        <button class="btn blue" style="margin-top:18px;position:relative;" data-goto="s-room"><span class="pin" style="top:-9px;right:-9px;">4</span>Отправить вызов</button>
+      </div></div>
+    </div>
+    <div class="notes">
+      <h4>Создать дуэль — взаимодействия</h4>
+      <div class="note"><div class="num">1</div><div class="nt"><b>Соперник.</b> Подставлен из <span class="goto" data-goto="s-friends">Друзей</span>. Кнопка «+» добавляет ещё игроков → <b>групповая дуэль</b>.</div></div>
+      <div class="note"><div class="num">2</div><div class="nt"><b>Ставка — ручной ввод.</b> Большое поле = пользователь печатает любую сумму. Чипы $10/25/50/100 снизу — быстрая подстановка (не единственный способ).</div></div>
+      <div class="note"><div class="num">3</div><div class="nt"><b>Стороны — редактируемые.</b> Создатель сам задаёт текст обеих сторон (это не только про опоздание: «Барса»/«Реал», «Я прав»/«Ты прав») и выбирает свою. Соперник автоматически получает другую.</div></div>
+      <div class="note"><div class="num">4</div><div class="nt"><b>«Отправить вызов»</b> → списывает твою ставку в эскроу и создаёт <span class="goto" data-goto="s-room">Комнату</span> в статусе «ожидание». Сопернику уходит <span class="goto" data-goto="s-invite">вызов</span>.</div></div>
+      <div class="tip">ИИ-Судья по тексту условия предлагает чёткую формулировку и критерий победы перед отправкой (анти-«почти успел»).</div>
+    </div>
+  </div>
+
+  <!-- ===================== 4. INVITE RECEIVED ===================== -->
+  <div class="screen" id="s-invite">
+    <div class="art">
+      <div class="art-tag">04 · <span>Вызов получен</span> (экран соперника)</div>
+      <div class="art-purpose">Что видит друг, которому бросили вызов. Принять / отклонить / изменить.</div>
+      <div class="phone"><div class="scr">
+        <div class="sb"><span>9:41</span><span class="dd"><i></i><i></i><i></i></span></div>
+        <div style="text-align:center;margin-top:30px;">
+          <div class="lbl" style="color:var(--blue);">⚔️ Тебе бросили вызов</div>
+          <div class="htitle" style="margin-top:10px;">Ник vs Ты</div>
+        </div>
+        <div class="card" style="margin-top:22px;text-align:center;padding:18px;">
+          <div class="lbl">Условие</div>
+          <div style="font-size:16px;font-weight:700;margin-top:8px;line-height:1.4;">«Саша опоздает на созвон сегодня позже 20:00»</div>
+        </div>
+        <div style="display:flex;gap:9px;margin-top:12px;">
+          <div class="card" style="flex:1;text-align:center;"><div class="lbl">БАНК</div><div style="font-family:var(--disp);font-weight:800;font-size:20px;color:var(--gold);margin-top:5px;">$50</div><div style="font-size:11px;color:var(--mut);">твоя ставка $25</div></div>
+          <div class="card" style="flex:1;text-align:center;"><div class="lbl">ТВОЯ СТОРОНА</div><div style="font-weight:800;font-size:16px;margin-top:7px;">Успею ✓</div></div>
+        </div>
+
+        <div style="margin-top:auto;"></div>
+        <button class="btn green" style="position:relative;" data-goto="s-room"><span class="pin" style="top:-9px;left:-9px;">1</span>Принять вызов · −$25</button>
+        <div style="display:flex;gap:9px;margin-top:9px;">
+          <button class="btn ghost sm" style="position:relative;"><span class="pin" style="top:-9px;left:-9px;">2</span>Отклонить</button>
+          <button class="btn ghost sm" style="position:relative;"><span class="pin" style="top:-9px;right:-9px;">3</span>Изменить условия</button>
+        </div>
+      </div></div>
+    </div>
+    <div class="notes">
+      <h4>Вызов получен — взаимодействия</h4>
+      <div class="note"><div class="num">1</div><div class="nt"><b>«Принять»</b> → списывает ставку соперника в эскроу, дуэль становится активной → оба в <span class="goto" data-goto="s-room">Комнате</span>.</div></div>
+      <div class="note"><div class="num">2</div><div class="nt"><b>«Отклонить»</b> → дуэль отменяется, ставка инициатора возвращается из эскроу. Инициатору приходит уведомление.</div></div>
+      <div class="note"><div class="num">3</div><div class="nt"><b>«Изменить условия»</b> → контр-предложение (другая сумма/формулировка). Возвращается инициатору на подтверждение.</div></div>
+      <div class="tip">Этот экран открывается из пуша/уведомления «Тебе бросили вызов». Деньги соперника блокируются только в момент принятия.</div>
+    </div>
+  </div>
+
+  <!-- ===================== 5. DUEL ROOM ===================== -->
+  <div class="screen" id="s-room">
+    <div class="art">
+      <div class="art-tag">05 · <span>Комната дуэли</span></div>
+      <div class="art-purpose">Сердце продукта: статус спора, чат-подколы, и здесь же ИИ-Судья пишет вердикт.</div>
+      <div class="phone"><div class="scr">
+        <div class="sb"><span>20:01</span><span class="dd"><i></i><i></i><i></i></span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;">
+          <div class="x" data-goto="s-feed" style="cursor:pointer;">‹</div>
+          <div style="font-weight:800;font-size:15px;">Ты vs Саша</div>
+          <div class="pill" style="color:var(--gold);">⏱ 00:14</div>
+        </div>
+
+        <div class="card" style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:12.5px;font-weight:600;color:#d7d5e4;line-height:1.35;">«Саша опоздает позже&nbsp;20:00»</div>
+          <div style="text-align:right;"><div class="lbl" style="color:var(--gold);">БАНК</div><div style="font-weight:800;color:var(--gold);">$50</div></div>
+        </div>
+
+        <!-- chat -->
+        <div style="flex:1;overflow:hidden;margin-top:12px;display:flex;flex-direction:column;gap:8px;">
+          <div style="align-self:flex-start;max-width:78%;background:var(--panel2);border:1px solid var(--line);border-radius:14px 14px 14px 4px;padding:9px 12px;font-size:12.5px;font-weight:600;"><b style="color:var(--red);font-size:11px;">Саша</b><br>я уже в пути, изи успею 😎</div>
+          <div style="align-self:flex-end;max-width:78%;background:var(--blue-soft);border:1px solid rgba(77,124,255,.3);border-radius:14px 14px 4px 14px;padding:9px 12px;font-size:12.5px;font-weight:600;">пробки же, готовь $25 👀</div>
+          <div style="align-self:center;background:var(--gold-soft);border:1px solid rgba(255,201,61,.35);border-radius:12px;padding:8px 12px;font-size:11.5px;font-weight:700;color:#ffdf9b;text-align:center;position:relative;"><span class="pin" style="top:-9px;right:-9px;">1</span>⚖️ Судья: жду наступления 20:00, фиксирую время прибытия</div>
+        </div>
+
+        <div class="card" style="margin-top:10px;position:relative;">
+          <span class="pin" style="top:-9px;left:-9px;">2</span>
+          <div class="lbl" style="text-align:center;">Время вышло — кто выиграл?</div>
+          <div style="display:flex;gap:9px;margin-top:9px;">
+            <button class="btn green sm" style="flex:1;" data-goto="s-win">Я выиграл</button>
+            <button class="btn ghost sm" style="flex:1;" data-goto="s-arb">Не согласен</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:9px;">
+          <div class="card" style="flex:1;color:var(--mut);font-size:12.5px;font-weight:600;">Написать…</div>
+          <div class="x">↑</div>
+        </div>
+      </div></div>
+    </div>
+    <div class="notes">
+      <h4>Комната дуэли — взаимодействия</h4>
+      <div class="note"><div class="num">1</div><div class="nt"><b>ИИ-Судья в чате.</b> Системные сообщения: зафиксировал условие, ведёт отсчёт, по итогу постит вердикт прямо в ленту комнаты.</div></div>
+      <div class="note"><div class="num">2</div><div class="nt"><b>Блок развязки</b> (появляется на дедлайне). «Я выиграл» обеими сторонами совпало → авто-выплата → <span class="goto" data-goto="s-win">Вердикт</span>. Если кто-то жмёт <b>«Не согласен»</b> → <span class="goto" data-goto="s-arb">Арбитраж</span>.</div></div>
+      <div class="note"><div class="num">💬</div><div class="nt"><b>Чат-подколы</b> между участниками — это и есть «комната, где спорят». Удерживает в дуэли и делает её весёлой.</div></div>
+      <div class="tip">Для групповой дуэли здесь несколько участников и несколько баров. Чат — главный социальный и удерживающий элемент.</div>
+    </div>
+  </div>
+
+  <!-- ===================== 6. ARBITRATION ===================== -->
+  <div class="screen" id="s-arb">
+    <div class="art">
+      <div class="art-tag">06 · <span>Арбитраж</span></div>
+      <div class="art-purpose">Если стороны не согласны: оба грузят пруфы, ИИ-Судья выносит вердикт.</div>
+      <div class="phone"><div class="scr">
+        <div class="sb"><span>20:15</span><span class="dd"><i></i><i></i><i></i></span></div>
+        <div style="text-align:center;margin-top:14px;"><div class="lbl" style="color:var(--red);">⚖️ Спор — арбитраж</div><div class="htitle" style="margin-top:8px;">Судья изучает пруфы</div></div>
+
+        <div style="display:flex;justify-content:center;margin-top:14px;">
+          <svg width="74" height="76" viewBox="0 0 60 64"><defs><linearGradient id="mm2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#42404F"/><stop offset="1" stop-color="#22202C"/></linearGradient></defs><rect x="12" y="12" width="36" height="34" rx="13" fill="url(#mm2)" stroke="rgba(255,255,255,.12)"/><rect x="17" y="19" width="26" height="20" rx="9" fill="#0B0A12"/><rect x="22" y="26" width="6" height="6" rx="3" fill="#4D7CFF"/><rect x="32" y="26" width="6" height="6" rx="3" fill="#4D7CFF"/><rect x="28" y="5" width="4" height="8" rx="2" fill="#39384A"/><circle cx="30" cy="5" r="3" fill="#FFC93D"/></svg>
+        </div>
+        <div style="height:8px;border-radius:6px;background:var(--panel2);margin-top:12px;overflow:hidden;"><div style="width:64%;height:100%;background:linear-gradient(90deg,var(--blue),var(--green));"></div></div>
+        <div style="text-align:center;font-size:11.5px;color:var(--mut);font-weight:700;margin-top:8px;">Сверяю время прибытия с условием…</div>
+
+        <div style="display:flex;gap:9px;margin-top:18px;">
+          <div style="flex:1;position:relative;"><span class="pin" style="top:-9px;left:-9px;">1</span><div class="lbl" style="color:var(--blue);margin-bottom:7px;">ТЫ</div>
+            <div class="card" style="font-size:11.5px;font-weight:600;border-color:rgba(57,217,138,.4);margin-bottom:7px;">📍 Гео: прибыл 20:14</div>
+            <div class="card" style="font-size:11.5px;font-weight:600;border-color:rgba(57,217,138,.4);">🕑 Скрин звонка</div>
+          </div>
+          <div style="flex:1;"><div class="lbl" style="color:var(--red);margin-bottom:7px;">САША</div>
+            <div class="card" style="font-size:11.5px;font-weight:600;margin-bottom:7px;">💬 «были пробки»</div>
+            <div class="card" style="font-size:11.5px;font-weight:600;color:var(--mut2);font-style:italic;">✕ пруф не приложен</div>
+          </div>
+        </div>
+
+        <div style="margin-top:auto;"></div>
+        <button class="btn ghost sm" style="position:relative;"><span class="pin" style="top:-9px;left:-9px;">2</span>➕ Добавить свой пруф</button>
+        <button class="btn gold" style="margin-top:9px;position:relative;" data-goto="s-win"><span class="pin" style="top:-9px;right:-9px;">3</span>Получить вердикт</button>
+      </div></div>
+    </div>
+    <div class="notes">
+      <h4>Арбитраж — взаимодействия</h4>
+      <div class="note"><div class="num">1</div><div class="nt"><b>Пруфы сторон.</b> Гео, скрин, фото со временем. У кого пруф сильнее — того и правда. Видно, кто что приложил.</div></div>
+      <div class="note"><div class="num">2</div><div class="nt"><b>«Добавить пруф»</b> — камера/файл. Фото для дисциплины-режима снимаются «в моменте» (анти-фейк), не из галереи.</div></div>
+      <div class="note"><div class="num">3</div><div class="nt"><b>«Получить вердикт»</b> → ИИ выносит прозрачное решение → <span class="goto" data-goto="s-win">Вердикт</span>. Несогласие → апелляция на живого арбитра (платно).</div></div>
+      <div class="tip">Качество и прозрачность Судьи = главный moat. Вердикт всегда с объяснением «почему».</div>
+    </div>
+  </div>
+
+  <!-- ===================== 7. VERDICT ===================== -->
+  <div class="screen" id="s-win">
+    <div class="art">
+      <div class="art-tag">07 · <span>Вердикт (Выигрыш)</span></div>
+      <div class="art-purpose">Момент-награда. Празднование, выплата, +рейтинг. Главный шер в соцсети.</div>
+      <div class="phone"><div class="scr" style="align-items:center;text-align:center;background:radial-gradient(120% 70% at 50% 2%,rgba(255,201,61,.16),transparent 55%),linear-gradient(180deg,#16141F,#0F0E16 60%);">
+        <div class="sb"><span>20:15</span><span class="dd"><i></i><i></i><i></i></span></div>
+        <div class="lbl" style="color:var(--gold);margin-top:14px;">Вердикт Судьи</div>
+        <div style="font-family:var(--disp);font-size:27px;font-weight:800;color:#fff;margin-top:8px;">Ты <span style="color:var(--blue);">выиграл</span></div>
+
+        <svg width="120" height="122" viewBox="0 0 170 172" style="margin-top:6px;"><defs><linearGradient id="metal2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4B4960"/><stop offset=".5" stop-color="#33313F"/><stop offset="1" stop-color="#22202B"/></linearGradient><linearGradient id="goldg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE08A"/><stop offset="1" stop-color="#E9A91C"/></linearGradient><radialGradient id="aura2" cx="50%" cy="42%" r="55%"><stop offset="0" stop-color="rgba(255,201,61,.4)"/><stop offset="1" stop-color="rgba(255,201,61,0)"/></radialGradient></defs><circle cx="85" cy="78" r="74" fill="url(#aura2)"/><g transform="rotate(20 128 40)"><rect x="120" y="48" width="8" height="40" rx="4" fill="#C9930F"/><rect x="106" y="30" width="36" height="22" rx="8" fill="url(#goldg2)"/></g><rect x="26" y="64" width="14" height="34" rx="7" fill="#2A2836"/><rect x="130" y="64" width="14" height="34" rx="7" fill="#2A2836"/><rect x="82" y="14" width="6" height="16" rx="3" fill="#3A3849"/><circle cx="85" cy="13" r="6" fill="url(#goldg2)"/><rect x="34" y="30" width="102" height="92" rx="34" fill="url(#metal2)" stroke="rgba(255,255,255,.14)"/><ellipse cx="85" cy="46" rx="42" ry="14" fill="rgba(255,255,255,.10)"/><rect x="48" y="50" width="74" height="56" rx="24" fill="#0A0912" stroke="rgba(77,124,255,.25)"/><g stroke="#6E97FF" stroke-width="5" fill="none" stroke-linecap="round"><path d="M60 80 Q69 70 78 80"/><path d="M92 80 Q101 70 110 80"/></g><path d="M76 92 Q85 100 94 92" stroke="#4D7CFF" stroke-width="3.5" fill="none" stroke-linecap="round"/></svg>
+
+        <div style="font-family:var(--disp);font-size:30px;font-weight:800;color:var(--gold);margin-top:6px;">+$47.50<span style="font-size:15px;"> USDT</span></div>
+        <div style="font-size:12px;color:var(--mut);font-weight:600;margin-top:5px;">банк $50 − 5% комиссии</div>
+
+        <div class="card" style="margin-top:14px;font-size:13.5px;font-weight:600;">⏱ Саша опоздал на <b style="color:var(--red)">14 минут</b>. Гео и время подтверждены.</div>
+
+        <div style="display:flex;gap:8px;margin-top:12px;width:100%;">
+          <div class="card" style="flex:1;text-align:center;"><div style="font-weight:800;color:var(--blue);">+25</div><div class="lbl" style="margin-top:3px;">РЕЙТИНГ</div></div>
+          <div class="card" style="flex:1;text-align:center;"><div style="font-weight:800;color:var(--gold);">🔥4</div><div class="lbl" style="margin-top:3px;">СТРИК</div></div>
+          <div class="card" style="flex:1;text-align:center;"><div style="font-weight:800;color:var(--green);">+120</div><div class="lbl" style="margin-top:3px;">XP</div></div>
+        </div>
+
+        <div style="display:flex;gap:9px;margin-top:auto;width:100%;">
+          <button class="btn ghost sm" style="flex:1;position:relative;" data-goto="s-create"><span class="pin" style="top:-9px;left:-9px;">1</span>↻ Реванш</button>
+          <button class="btn gold sm" style="flex:1;position:relative;" data-goto="s-wallet"><span class="pin" style="top:-9px;right:-9px;">2</span>Забрать банк</button>
+        </div>
+      </div></div>
+    </div>
+    <div class="notes">
+      <h4>Вердикт — взаимодействия</h4>
+      <div class="note"><div class="num">1</div><div class="nt"><b>«Реванш»</b> → <span class="goto" data-goto="s-create">Создать дуэль</span> с тем же соперником и условием (подогревает H2H-вражду).</div></div>
+      <div class="note"><div class="num">2</div><div class="nt"><b>«Забрать банк»</b> → выигрыш зачислен на баланс в <span class="goto" data-goto="s-wallet">Кошельке</span> (при non-custodial — выплата по смарт-контракту).</div></div>
+      <div class="note"><div class="num">📤</div><div class="nt">Добавить кнопку <b>«Поделиться»</b> — генерит карточку результата для Stories/ТикТока. Это бесплатный канал привлечения.</div></div>
+      <div class="tip">Экран проигравшего — зеркальный, но с мотивацией: «−15 рейтинга, реванш?» Без унижения, чтобы хотелось отыграться.</div>
+    </div>
+  </div>
+
+  <!-- ===================== 8. WALLET ===================== -->
+  <div class="screen" id="s-wallet">
+    <div class="art">
+      <div class="art-tag">08 · <span>Кошелёк</span></div>
+      <div class="art-purpose">Баланс USDT, пополнение, вывод, история операций.</div>
+      <div class="phone"><div class="scr has-nav">
+        <div class="sb"><span>9:41</span><span class="dd"><i></i><i></i><i></i></span></div>
+        <div class="htitle" style="margin-top:12px;">Кошелёк</div>
+
+        <div class="card" style="margin-top:14px;text-align:center;padding:22px;background:linear-gradient(160deg,rgba(77,124,255,.18),var(--panel));border-color:rgba(77,124,255,.3);">
+          <div class="lbl">Баланс</div>
+          <div style="font-family:var(--disp);font-weight:800;font-size:34px;margin-top:6px;">$245.00</div>
+          <div style="font-size:12px;color:var(--mut);font-weight:600;">≈ 245 USDT · из них $50 в эскроу</div>
+        </div>
+
+        <div style="display:flex;gap:9px;margin-top:12px;">
+          <button class="btn green sm" style="flex:1;position:relative;"><span class="pin" style="top:-9px;left:-9px;">1</span>↓ Пополнить</button>
+          <button class="btn ghost sm" style="flex:1;position:relative;"><span class="pin" style="top:-9px;right:-9px;">2</span>↑ Вывести</button>
+        </div>
+
+        <div class="lbl" style="margin-top:18px;position:relative;">История <span class="pin" style="top:-6px;right:-2px;">3</span></div>
+        <div class="card" style="margin-top:9px;display:flex;justify-content:space-between;align-items:center;"><div style="font-size:13px;font-weight:600;">Выигрыш у Саши</div><div style="color:var(--green);font-weight:800;">+$47.50</div></div>
+        <div class="card" style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;"><div style="font-size:13px;font-weight:600;">Ставка · дуэль с Лёшей</div><div style="color:var(--red);font-weight:800;">−$25.00</div></div>
+        <div class="card" style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;"><div style="font-size:13px;font-weight:600;">Пополнение USDT</div><div style="color:var(--green);font-weight:800;">+$200.00</div></div>
+
+        <div class="nav">
+          <div class="ni" data-goto="s-feed"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Лента</div>
+          <div class="ni" data-goto="s-friends"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0M16 7a3 3 0 0 1 0 6M21 20a5 5 0 0 0-4-4.9"/></svg>Друзья</div>
+          <div class="ni plus" data-goto="s-create"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
+          <div class="ni on"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M16 12h2"/></svg>Кошелёк</div>
+          <div class="ni" data-goto="s-profile"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Профиль</div>
+        </div>
+      </div></div>
+    </div>
+    <div class="notes">
+      <h4>Кошелёк — взаимодействия</h4>
+      <div class="note"><div class="num">1</div><div class="nt"><b>«Пополнить»</b> → пополнение баланса в USDT (адрес для депозита / Telegram-кошелёк на TON). На MVP — крипта.</div></div>
+      <div class="note"><div class="num">2</div><div class="nt"><b>«Вывести»</b> → вывод USDT на кошелёк пользователя. <b>Важно по безопасности:</b> приложение не хранит приватные ключи и реквизиты; ввод адреса делает сам пользователь.</div></div>
+      <div class="note"><div class="num">3</div><div class="nt"><b>История</b> — все операции: ставки, выигрыши, пополнения, выводы, комиссии.</div></div>
+      <div class="tip">Часть баланса может быть «в эскроу» (заморожена в активных дуэлях) — показываем отдельно, чтобы не путать с доступной суммой.</div>
+    </div>
+  </div>
+
+  <!-- ===================== 9. PROFILE ===================== -->
+  <div class="screen" id="s-profile">
+    <div class="art">
+      <div class="art-tag">09 · <span>Профиль</span></div>
+      <div class="art-purpose">Геймификация: уровень, ранг, рекорд, стрик, титулы, личный счёт с друзьями.</div>
+      <div class="phone"><div class="scr has-nav">
+        <div class="sb"><span>9:41</span><span class="dd"><i></i><i></i><i></i></span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;"><div class="htitle">Профиль</div><div class="x" style="position:relative;cursor:pointer;"><span class="pin" style="top:-9px;right:-9px;">1</span>⚙</div></div>
+
+        <div style="display:flex;align-items:center;gap:13px;margin-top:16px;">
+          <div class="ava" style="width:64px;height:64px;background:linear-gradient(160deg,#6E97FF,#4068E8);font-size:30px;position:relative;">🐱<div style="position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);background:#0F0E16;border:1.5px solid var(--gold);color:var(--gold);font-size:10px;font-weight:800;padding:2px 8px;border-radius:14px;">LV.12</div></div>
+          <div><div style="font-weight:800;font-size:19px;">Ник</div><div style="color:var(--green);font-weight:800;font-size:12px;margin-top:3px;">◆ ПЛАТИНА · 1480</div><div style="color:var(--mut);font-size:11.5px;font-weight:600;margin-top:2px;">топ 8% игроков</div></div>
+        </div>
+
+        <div style="margin-top:18px;"><div class="lbl">До LV.13</div><div style="height:10px;border-radius:8px;background:var(--panel2);margin-top:7px;overflow:hidden;"><div style="width:68%;height:100%;background:linear-gradient(90deg,var(--blue),var(--green));"></div></div></div>
+
+        <div style="display:flex;gap:9px;margin-top:16px;">
+          <div class="card" style="flex:1;text-align:center;"><div style="font-weight:800;font-size:22px;color:var(--blue);">12</div><div class="lbl" style="margin-top:2px;">ПОБЕД</div></div>
+          <div class="card" style="flex:1;text-align:center;"><div style="font-weight:800;font-size:22px;color:var(--red);">4</div><div class="lbl" style="margin-top:2px;">ПОРАЖ.</div></div>
+          <div class="card" style="flex:1;text-align:center;"><div style="font-weight:800;font-size:22px;color:var(--gold);">75%</div><div class="lbl" style="margin-top:2px;">ВИНРЕЙТ</div></div>
+        </div>
+
+        <div class="lbl" style="margin-top:16px;">Титулы</div>
+        <div style="display:flex;gap:8px;margin-top:9px;">
+          <div class="card" style="flex:1;text-align:center;padding:10px 4px;"><div style="font-size:20px;">🛡️</div><div style="font-size:9.5px;font-weight:700;margin-top:5px;">Несломл.</div></div>
+          <div class="card" style="flex:1;text-align:center;padding:10px 4px;"><div style="font-size:20px;">⏰</div><div style="font-size:9.5px;font-weight:700;margin-top:5px;">Пунктуал.</div></div>
+          <div class="card" style="flex:1;text-align:center;padding:10px 4px;"><div style="font-size:20px;">💎</div><div style="font-size:9.5px;font-weight:700;margin-top:5px;">Слово</div></div>
+        </div>
+
+        <div class="card" style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;position:relative;"><span class="pin" style="top:-9px;left:-9px;">2</span><div style="font-size:12.5px;font-weight:700;">Лига друзей 🏆<div style="color:var(--mut);font-size:11px;font-weight:600;">сезон · 5 дней</div></div><div style="font-family:var(--disp);font-weight:800;font-size:22px;color:var(--gold);">#2</div></div>
+
+        <div class="nav">
+          <div class="ni" data-goto="s-feed"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Лента</div>
+          <div class="ni" data-goto="s-friends"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0M16 7a3 3 0 0 1 0 6M21 20a5 5 0 0 0-4-4.9"/></svg>Друзья</div>
+          <div class="ni plus" data-goto="s-create"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
+          <div class="ni" data-goto="s-wallet"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M16 12h2"/></svg>Кошелёк</div>
+          <div class="ni on"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Профиль</div>
+        </div>
+      </div></div>
+    </div>
+    <div class="notes">
+      <h4>Профиль — взаимодействия</h4>
+      <div class="note"><div class="num">1</div><div class="nt"><b>Настройки (⚙)</b> → уведомления, язык, привязка кошелька, выход.</div></div>
+      <div class="note"><div class="num">2</div><div class="nt"><b>Лига друзей</b> (тап) → таблица лидеров и личные счёты H2H («Ты 4–1 Саша»).</div></div>
+      <div class="note"><div class="num">📊</div><div class="nt">Уровень / XP / ранг / стрик / винрейт / титулы — вся прокачка, которую ты хотел.</div></div>
+      <div class="tip">«Очки Чести» (платит ли достойно, не юлит ли) можно показать отдельной метрикой — это уникальный, некопируемый слой доверия.</div>
+    </div>
+  </div>
+
+  <div class="footdoc">
+    <b>Что я добавил сверх запроса (для целостности и интуитивности):</b>
+    <ul>
+      <li><b>Лента активности друзей</b> — виральность и FOMO прямо на главной.</li>
+      <li><b>Экран «Вызов получен»</b> с принять / отклонить / изменить — без него дуэль не запускается.</li>
+      <li><b>Чат в комнате дуэли</b> — то самое «место, где друзья спорят», удержание и веселье.</li>
+      <li><b>Кнопка «Поделиться» на вердикте</b> — карточка результата в Stories/ТикТок как канал роста.</li>
+      <li><b>Разделение баланса</b> на доступный и «в эскроу», заметка по безопасности (не храним ключи/реквизиты).</li>
+      <li><b>Зеркальный экран проигрыша</b> с мотивацией на реванш.</li>
+    </ul>
+    <div style="margin-top:14px;"><b>Дальше дорабатываем:</b> онбординг и приглашение друзей, пуш-уведомления, групповые дуэли (UI на 3+ участников), состояния загрузки/пустые экраны, и финальный нейминг с перекраской под бренд. Скажи, с чего начать — и какой экран довести до пиксель-перфекта первым.</div>
+  </div>
+
+</div>
+
+<script>
+  function goTo(id){var el=document.getElementById(id);if(!el)return;
+    el.scrollIntoView({behavior:'smooth',block:'center'});
+    el.classList.add('flash');setTimeout(function(){el.classList.remove('flash');},1400);}
+  document.addEventListener('click',function(e){
+    var t=e.target.closest('[data-goto]');if(t){e.preventDefault();goTo(t.getAttribute('data-goto'));}
+  });
+</script>
+</body>
+</html>

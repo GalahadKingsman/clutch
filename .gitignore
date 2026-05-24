@@ -1,0 +1,35 @@
+# Env & secrets
+.env
+.env.local
+.env.*.local
+
+# Go
+bin/
+*.exe
+*.test
+vendor/
+
+# Node
+node_modules/
+apps/miniapp/dist/
+
+# Anchor / Solana
+programs/**/target/
+.anchor/
+test-ledger/
+**/*.so
+target/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Deploy / data
+data/
+*.log
+deploy/*.pem
+
+# Build
+dist/

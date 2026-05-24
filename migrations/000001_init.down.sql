@@ -1,0 +1,4 @@
+DROP TABLE IF EXISTS wallet_link_nonces;
+DROP TABLE IF EXISTS friendships;
+DROP TABLE IF EXISTS users;
+DROP EXTENSION IF EXISTS pg_trgm;
