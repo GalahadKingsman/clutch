@@ -72,6 +72,10 @@ TELEGRAM_WEBHOOK_SECRET=случайный-секрет
 # Полный деплой (miniapp build + backend + nginx)
 make deploy-all
 
+# Если ошибка «npm ci» / нет package-lock.json:
+# cd apps/miniapp && npm install && npm run build && cd ../..
+# затем docker compose ... (см. Makefile)
+
 # Только пересобрать бэкенд
 make redeploy-backend
 

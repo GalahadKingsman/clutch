@@ -22,13 +22,13 @@ go-mod:
 	go mod download
 
 miniapp-install:
-	cd apps/miniapp && npm ci
+	cd apps/miniapp && npm install
 
 build-api:
 	docker compose build api bot migrate
 
 build-miniapp:
-	cd apps/miniapp && npm ci && npm run build
+	cd apps/miniapp && npm install && npm run build
 
 build: build-miniapp build-api
 
