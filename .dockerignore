@@ -1,0 +1,8 @@
+.git
+.env
+data/
+target/
+node_modules/
+apps/miniapp/node_modules/
+apps/miniapp/dist/
+**/*.log

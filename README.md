@@ -83,6 +83,18 @@ make redeploy-backend
 make redeploy-miniapp
 ```
 
+**Белый экран в Telegram?** Почти всегда nginx без собранного фронта. На VPS:
+
+```bash
+make redeploy-backend   # пересоберёт api + nginx (miniapp внутри Docker)
+# проверка:
+curl -sI https://YOUR_DOMAIN/ | head -3
+curl -s https://YOUR_DOMAIN/ | head -5   # должен быть index.html с /assets/*.js
+curl -s https://YOUR_DOMAIN/api/v1/../health  # → /health через nginx: GET /health на api
+curl -s https://YOUR_DOMAIN/health
+docker compose logs api --tail 30
+```
+
 Nginx слушает порт **80** (`HTTP_PORT` в `.env`). Для HTTPS поставь Certbot перед nginx или используй Cloudflare.
 
 ### 5. Solana program (devnet)

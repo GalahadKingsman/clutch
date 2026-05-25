@@ -1,4 +1,4 @@
-.PHONY: help deps go-mod build-api build-bot build-miniapp build anchor-build-sbf migrate-up \
+.PHONY: help deps go-mod build-api build-bot build-nginx build-miniapp build anchor-build-sbf migrate-up \
         deploy-backend redeploy-backend deploy-miniapp redeploy-miniapp deploy-all \
         dev-up dev-down logs
 
@@ -28,27 +28,30 @@ miniapp-install:
 build-api:
 	docker compose build api bot migrate
 
+build-nginx:
+	docker compose build nginx
+
 build-miniapp:
 	cd apps/miniapp && npm install && npm run build
 
-build: build-miniapp build-api
+build: build-nginx build-api
 
 # ─── Production deploy (VPS) ───────────────────────────────
-deploy-backend: build-api
+deploy-backend: build-api build-nginx
 	docker compose --env-file .env up -d postgres redis
 	docker compose --env-file .env run --rm migrate
 	docker compose --env-file .env up -d api bot nginx
 
-redeploy-backend: build-api
+redeploy-backend: build-api build-nginx
 	docker compose --env-file .env run --rm migrate
-	docker compose --env-file .env up -d --build api bot
+	docker compose --env-file .env up -d --build api bot nginx
 
-deploy-miniapp: build-miniapp
-	docker compose --env-file .env up -d nginx
+deploy-miniapp: build-nginx
+	docker compose --env-file .env up -d --build nginx
 
 redeploy-miniapp: deploy-miniapp
 
-deploy-all: deploy-miniapp deploy-backend
+deploy-all: deploy-backend
 
 anchor-build-sbf:
 	cargo build-sbf --manifest-path programs/clutch-escrow/Cargo.toml --sbf-out-dir target/deploy
