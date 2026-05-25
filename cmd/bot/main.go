@@ -27,10 +27,10 @@ func main() {
 	pref := tele.Settings{
 		Token: cfg.TelegramBotToken,
 		Poller: &tele.Webhook{
-			Listen: ":" + cfg.BotWebhookPort,
+			Listen:      ":" + cfg.BotWebhookPort,
+			SecretToken: cfg.TelegramWebhookSec,
 			Endpoint: &tele.WebhookEndpoint{
-				PublicURL:   webhookPublic,
-				SecretToken: cfg.TelegramWebhookSec,
+				PublicURL: webhookPublic,
 			},
 		},
 	}
