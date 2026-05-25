@@ -1,4 +1,4 @@
-.PHONY: help deps go-mod build-api build-bot build-miniapp build migrate-up \
+.PHONY: help deps go-mod build-api build-bot build-miniapp build anchor-build-sbf migrate-up \
         deploy-backend redeploy-backend deploy-miniapp redeploy-miniapp deploy-all \
         dev-up dev-down logs
 
@@ -12,6 +12,7 @@ help:
 	@echo "  make deploy-miniapp    - build miniapp + restart nginx"
 	@echo "  make redeploy-miniapp  - same as deploy-miniapp"
 	@echo "  make deploy-all        - miniapp + full backend stack"
+	@echo "  make anchor-build-sbf  - build clutch_escrow.so (Mac, devnet)"
 	@echo "  make migrate-up        - run SQL migrations in docker"
 	@echo "  make dev-up            - local infra only (postgres, redis)"
 
@@ -48,6 +49,9 @@ deploy-miniapp: build-miniapp
 redeploy-miniapp: deploy-miniapp
 
 deploy-all: deploy-miniapp deploy-backend
+
+anchor-build-sbf:
+	cargo build-sbf --manifest-path programs/clutch-escrow/Cargo.toml --sbf-out-dir target/deploy
 
 migrate-up:
 	docker compose --env-file .env run --rm migrate

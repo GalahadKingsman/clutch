@@ -12,7 +12,8 @@ interface TelegramWebApp {
   ready(): void;
   expand(): void;
   initData: string;
-  initDataUnsafe: Record<string, unknown>;
+  initDataUnsafe: { start_param?: string };
+  openTelegramLink?(url: string): void;
 }
 
 interface Window {

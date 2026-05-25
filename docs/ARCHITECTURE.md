@@ -734,24 +734,24 @@ apps/miniapp/
 
 ### Phase 1 — Core Duel Loop (3–4 недели)
 
-- [ ] Mini App shell: navigation (tab bar), TMA theme
-- [ ] Wallet Gate (blocking) + API middleware `wallet_required`
-- [ ] Price oracle + USD display
-- [ ] Create duel → on-chain deposit
-- [ ] Bot notifications: вызов, принятие
-- [ ] Invite flow (`startapp`) + accept duel
-- [ ] Duel room: chat (WS) + judge system messages
-- [ ] Mutual win path
+- [x] Mini App shell: navigation (tab bar), TMA theme
+- [x] Wallet Gate (blocking) + API middleware `wallet_required`
+- [x] Price oracle + USD display (Jupiter + fallback)
+- [x] Create duel → on-chain tx create/accept (devnet; USDC vault — Phase 2)
+- [x] Bot notifications: вызов, принятие
+- [x] Invite flow (`startapp`) + accept duel
+- [x] Duel room: chat (WS) + judge system messages
+- [x] Mutual win path (claim + confirm)
 - [ ] Indexer sync
-- [ ] Screens: Feed, Friends, Create, Invite, Room
+- [x] Screens: Feed, Friends, Create, Invite, Room
 
 ### Phase 2 — Dispute & AI (2–3 недели)
 
-- [ ] Dispute + proof upload
-- [ ] AI clarify + AI judge + `settle_ai`
-- [ ] Arbitration + Verdict screens
-- [ ] 5-min appeal window
-- [ ] Bot: вердикт, напоминания
+- [x] Dispute + proof upload
+- [x] AI clarify + AI judge (`settle_ai` on-chain — отложено, settle в БД)
+- [x] Arbitration + Verdict screens
+- [x] 5-min appeal window
+- [x] Bot: вердикт, напоминания
 
 ### Phase 3 — Human Arbiter & Polish (2 недели)
 

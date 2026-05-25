@@ -1,0 +1,5 @@
+DROP TABLE IF EXISTS activity_feed;
+DROP TABLE IF EXISTS duel_events;
+DROP TABLE IF EXISTS chat_messages;
+DROP TABLE IF EXISTS duels;
+DROP TABLE IF EXISTS invite_codes;

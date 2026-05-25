@@ -42,12 +42,18 @@ func main() {
 
 	b.Handle("/start", func(c tele.Context) error {
 		payload := c.Message().Payload
+		appURL := miniAppURL
 		msg := "⚔️ Добро пожаловать в CLUTCH!\n\nСпорь с друзьями на крипту — Судья следит за честностью."
 		if payload != "" {
-			msg += "\n\nКод приглашения: " + payload
+			if len(payload) > 7 && payload[:7] == "invite_" {
+				msg = "👋 Тебя пригласили в CLUTCH!\n\nОткрой приложение — дружба добавится автоматически."
+				appURL = miniAppURL + "?startapp=" + payload
+			} else {
+				msg += "\n\nКод: " + payload
+			}
 		}
 		return c.Send(msg, &tele.ReplyMarkup{InlineKeyboard: [][]tele.InlineButton{
-			{{Text: "Открыть CLUTCH", WebApp: &tele.WebApp{URL: miniAppURL}}},
+			{{Text: "Открыть CLUTCH", WebApp: &tele.WebApp{URL: appURL}}},
 		}})
 	})
 

@@ -14,6 +14,11 @@ import (
 	"github.com/GalahadKingsman/clutch/internal/handlers"
 	"github.com/GalahadKingsman/clutch/internal/middleware"
 	"github.com/GalahadKingsman/clutch/internal/repository"
+	"github.com/GalahadKingsman/clutch/internal/service"
+	"github.com/GalahadKingsman/clutch/internal/solana"
+	"github.com/GalahadKingsman/clutch/internal/storage"
+	"github.com/GalahadKingsman/clutch/internal/telegram"
+	"github.com/GalahadKingsman/clutch/internal/ws"
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -36,7 +41,35 @@ func main() {
 	defer pool.Close()
 
 	users := repository.NewUserRepository(pool)
+	friends := repository.NewFriendRepository(pool)
+	duels := repository.NewDuelRepository(pool)
+	proofs := repository.NewProofRepository(pool)
+	verdicts := repository.NewVerdictRepository(pool)
+	chat := repository.NewChatRepository(pool)
+	cards := service.NewDuelCardService(users)
+	notify := telegram.NewNotifier(cfg.TelegramBotToken)
+	hub := ws.NewHub()
+	priceH := handlers.NewPriceHandler()
+
+	chain, err := solana.NewClient(cfg.SolanaRPCURL, cfg.ClutchProgramID)
+	if err != nil {
+		log.Printf("warn: solana client: %v", err)
+	}
+	if chain != nil && chain.HasProgram() {
+		log.Printf("clutch on-chain program: %s", cfg.ClutchProgramID)
+	}
+
 	authH := handlers.NewAuthHandler(cfg, users)
+	socialH := handlers.NewSocialHandler(cfg, friends)
+	feedH := handlers.NewFeedHandler(duels, cards)
+	walletH := handlers.NewWalletHandler(cfg, users, chain)
+	store, err := storage.NewLocalStore(cfg.UploadDir)
+	if err != nil {
+		log.Fatalf("storage: %v", err)
+	}
+	duelH := handlers.NewDuelHandler(cfg, duels, friends, users, chat, cards, notify, hub, chain)
+	disputeH := handlers.NewDisputeHandler(cfg, duels, proofs, verdicts, users, chat, cards, notify, store)
+	aiH := handlers.NewAIHandler()
 
 	r := chi.NewRouter()
 	r.Use(chimw.RequestID, chimw.RealIP, chimw.Logger, chimw.Recoverer, chimw.Timeout(60*time.Second))
@@ -61,14 +94,21 @@ func main() {
 			protected.Post("/auth/wallet/nonce", authH.WalletNonce)
 			protected.Post("/auth/wallet/link", authH.WalletLink)
 
-			// Phase 1+ routes go behind RequireWallet
 			protected.Group(func(locked chi.Router) {
 				locked.Use(middleware.RequireWallet(users))
-				locked.Get("/feed/friends", func(w http.ResponseWriter, r *http.Request) {
-					handlers.Health(w, r) // stub until Phase 1
+				locked.Get("/feed/friends", feedH.Friends)
+				locked.Get("/prices", priceH.Get)
+				locked.Get("/wallet/balances", walletH.Balances)
+				locked.Get("/users/search", socialH.SearchUsers)
+				locked.Mount("/friends", socialH.Routes())
+				locked.Mount("/duels", duelH.Routes())
+				locked.Route("/duels/{id}", func(dr chi.Router) {
+					dr.Mount("/", disputeH.Routes())
 				})
+				locked.Post("/ai/clarify-condition", aiH.ClarifyCondition)
 			})
 		})
+		api.Get("/files/*", disputeH.ServeFile)
 	})
 
 	addr := ":" + cfg.APIPort

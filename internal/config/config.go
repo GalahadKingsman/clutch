@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -26,6 +27,9 @@ type Config struct {
 	SolanaRPCURL      string
 	ClutchProgramID   string
 	ClutchTreasuryKey string
+	UsdcMintDevnet    string
+	UploadDir         string
+	TelegramArbiterChatID int64
 
 	APIPort          string
 	BotWebhookPort   string
@@ -52,6 +56,9 @@ func Load() (*Config, error) {
 		SolanaRPCURL:      getEnv("SOLANA_RPC_URL", "https://api.devnet.solana.com"),
 		ClutchProgramID:   os.Getenv("CLUTCH_PROGRAM_ID"),
 		ClutchTreasuryKey: os.Getenv("CLUTCH_TREASURY_PUBKEY"),
+		UsdcMintDevnet:    getEnv("USDC_MINT_DEVNET", "4zMMC9srt5Ri5X14GAgXhaHii3GnPEhPSZeSRmuqXnE"),
+		UploadDir:         getEnv("UPLOAD_DIR", "data/uploads"),
+		TelegramArbiterChatID: envInt64("TELEGRAM_ARBITER_CHAT_ID", 0),
 
 		APIPort:        getEnv("API_PORT", "8080"),
 		BotWebhookPort: getEnv("BOT_WEBHOOK_PORT", "8081"),
@@ -75,6 +82,15 @@ func getEnv(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+func envInt64(key string, def int64) int64 {
+	if v := os.Getenv(key); v != "" {
+		if n, err := strconv.ParseInt(v, 10, 64); err == nil {
+			return n
+		}
+	}
+	return def
 }
 
 func splitCSV(s string) []string {

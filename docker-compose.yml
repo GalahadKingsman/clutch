@@ -44,6 +44,8 @@ services:
     entrypoint: ["/app/clutch-api"]
     restart: unless-stopped
     env_file: .env
+    volumes:
+      - uploads_data:/app/data/uploads
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -79,3 +81,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  uploads_data:
