@@ -14,4 +14,4 @@ COPY --from=builder /bin/clutch-api /app/clutch-api
 COPY --from=builder /bin/clutch-migrate /app/clutch-migrate
 COPY migrations /app/migrations
 EXPOSE 8080
-ENTRYPOINT ["/app/clutch-api"]
+# ENTRYPOINT задаётся в docker-compose (api vs migrate)

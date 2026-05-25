@@ -29,7 +29,8 @@ services:
     build:
       context: .
       dockerfile: deploy/Dockerfile.api
-    command: ["/app/clutch-migrate", "up"]
+    entrypoint: ["/app/clutch-migrate"]
+    command: ["up"]
     env_file: .env
     depends_on:
       postgres:
@@ -40,6 +41,7 @@ services:
     build:
       context: .
       dockerfile: deploy/Dockerfile.api
+    entrypoint: ["/app/clutch-api"]
     restart: unless-stopped
     env_file: .env
     depends_on:
