@@ -267,9 +267,9 @@ sudo ufw allow 443/tcp
 ```bash
 cd ~/clutch
 DOMAIN="YOUR_DOMAIN.ru"
-sed "s/your-domain.ru/$DOMAIN/g" deploy/nginx/nginx-ssl.example.conf \
-  | sudo tee deploy/nginx/nginx-ssl.conf > /dev/null
-nano deploy/nginx/nginx-ssl.conf   # проверь server_name и пути
+sed "s/your-domain.ru/$DOMAIN/g" deploy/nginx/nginx-ssl.example.conf > deploy/nginx/nginx-ssl.conf
+# должен быть полный nginx.conf (worker_processes, http, upstream), не только server {}
+head -25 deploy/nginx/nginx-ssl.conf
 ```
 
 ### 7.3. Перезапуск
