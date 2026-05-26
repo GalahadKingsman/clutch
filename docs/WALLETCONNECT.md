@@ -1,6 +1,6 @@
-# WalletConnect v2 (Solana)
+# WalletConnect v2 (Solana) — Reown AppKit
 
-Привязка кошелька и on-chain tx в Mini App идут **только через WalletConnect v2** (Phantom, Trust, MetaMask Solana и др. в одном списке).
+Привязка кошелька и on-chain tx в Mini App идут через **Reown AppKit** (WalletConnect v2). Phantom, Trust и др. — в модальном окне выбора кошелька.
 
 ## 1. Project ID
 
@@ -32,9 +32,12 @@ docker compose -f docker-compose.yml -f docker-compose.ssl.yml up -d nginx
 ## 4. Flow
 
 1. Пользователь жмёт **«Подключить кошелёк»**.
-2. Открывается WalletConnect (выбор Phantom / Trust / …).
-3. Кошелёк подписывает SIWS-сообщение → `POST /auth/wallet/link`.
-4. Для дуэлей on-chain снова нужна активная WC-сессия (баннер «Подключить» в комнате дуэли).
+2. Открывается **модалка Reown AppKit** (список кошельков).
+3. Выбор Phantom → переход в приложение кошелька → подтверждение.
+4. Автоматически запрашивается подпись SIWS → `POST /auth/wallet/link`.
+5. Для on-chain tx снова нужна сессия (баннер в комнате дуэли).
+
+Если кнопка «ничего не делает» — пересобери nginx после `VITE_WALLETCONNECT_PROJECT_ID` в `.env`.
 
 ## 5. Allowed origins (Reown)
 

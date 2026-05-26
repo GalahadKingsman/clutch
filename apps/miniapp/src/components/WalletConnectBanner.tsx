@@ -4,11 +4,11 @@ type Props = {
   className?: string;
 };
 
-/** Напоминание переподключить WC перед on-chain tx (сессия могла сброситься). */
+/** Переподключить WC перед on-chain tx. */
 export function WalletConnectBanner({ className = '' }: Props) {
-  const { connected, connecting, connect, walletName } = useClutchWallet();
+  const { isConnected, openWalletModal } = useClutchWallet();
 
-  if (connected) return null;
+  if (isConnected) return null;
 
   return (
     <div
@@ -20,12 +20,10 @@ export function WalletConnectBanner({ className = '' }: Props) {
       </p>
       <button
         type="button"
-        disabled={connecting}
-        onClick={() => void connect()}
+        onClick={() => openWalletModal()}
         className="mt-2 font-bold text-blue"
       >
-        {connecting ? 'Подключение…' : 'Подключить'}
-        {walletName ? ` (${walletName})` : ''}
+        Подключить кошелёк
       </button>
     </div>
   );
