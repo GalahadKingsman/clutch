@@ -18,7 +18,7 @@ function signatureToBase64(sig: Uint8Array): string {
 }
 
 export function useClutchWallet() {
-  const { open } = useAppKit();
+  const { open, close } = useAppKit();
   const { address, isConnected } = useAppKitAccount({ namespace: 'solana' });
   const { walletProvider } = useAppKitProvider<Provider>('solana');
   const { connection } = useAppKitConnection();
@@ -59,6 +59,7 @@ export function useClutchWallet() {
     isConnected,
     walletProvider,
     openWalletModal: () => open({ view: 'Connect', namespace: 'solana' }),
+    closeWalletModal: () => close(),
     signAuthMessage,
     sendBase64Transaction,
   };

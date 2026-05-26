@@ -18,6 +18,8 @@ interface TelegramWebApp {
   initData: string;
   initDataUnsafe: { start_param?: string };
   openTelegramLink?(url: string): void;
+  openLink?(url: string, options?: { try_instant_view?: boolean }): void;
+  platform?: string;
 }
 
 interface Window {

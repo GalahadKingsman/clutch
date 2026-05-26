@@ -62,3 +62,11 @@ docker compose -f docker-compose.yml -f docker-compose.ssl.yml up -d nginx
 Если кошелёк вернулся в Mini App без подписи — нажми **«Продолжить привязку»**.
 
 MetaMask должен иметь включённый **Solana** в настройках; иначе адрес Solana не придёт.
+
+### Telegram: бесконечная загрузка «Continue in MetaMask»
+
+В Mini App внутри Telegram `window.open(metamask://…)` не открывает кошелёк корректно — сессия WC зависает.
+
+**Решение в CLUTCH:** перехват ссылок через `Telegram.WebApp.openLink`, на мобильном Telegram показываются только **Phantom** и **QR**. MetaMask/Trust — в обычном браузере.
+
+Если всё же зависло: «Отменить подключение» → полностью закрыть MetaMask → снова **Phantom**.

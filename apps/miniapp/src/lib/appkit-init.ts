@@ -1,6 +1,7 @@
 import { createAppKit } from '@reown/appkit/react';
 import { SolanaAdapter } from '@reown/appkit-adapter-solana/react';
 import { solana, solanaDevnet } from '@reown/appkit/networks';
+import { isTelegramWebApp } from './telegram';
 
 const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || '';
 const appUrl = import.meta.env.VITE_APP_URL || 'https://clutch-duel.ru';
@@ -42,7 +43,13 @@ export function initAppKit(): { ok: boolean; error?: string } {
       },
       features: {
         analytics: false,
+        email: false,
+        socials: false,
       },
+      enableWalletConnect: true,
+      ...(isTelegramWebApp() && {
+        enableMobileWalletSelection: true,
+      }),
       themeMode: 'dark',
       themeVariables: {
         '--w3m-z-index': '10000',

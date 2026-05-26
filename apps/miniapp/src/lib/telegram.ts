@@ -31,3 +31,14 @@ export function waitForInitData(timeoutMs = 6000): Promise<string> {
 export function telegramPlatform(): string {
   return window.Telegram?.WebApp?.platform ?? 'unknown';
 }
+
+export function isTelegramMobile(): boolean {
+  const p = telegramPlatform();
+  return (
+    p === 'ios' ||
+    p === 'android' ||
+    p === 'android_x' ||
+    p === 'weba' ||
+    p === 'webk'
+  );
+}
