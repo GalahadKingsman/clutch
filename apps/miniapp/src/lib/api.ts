@@ -154,6 +154,49 @@ export function walletLink(payload: {
   });
 }
 
+/** Без JWT — страница в in-app браузере Phantom. */
+async function apiPublic<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(init?.headers as Record<string, string>),
+    },
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = body as { error?: string; message?: string };
+    throw new Error(err.message || err.error || res.statusText);
+  }
+  return body as T;
+}
+
+export function phantomBridgePrepare() {
+  return api<{ phantom_url: string; page_url: string }>(
+    '/auth/wallet/phantom-bridge',
+    { method: 'POST' },
+  );
+}
+
+export function phantomBridgeSession(token: string) {
+  const q = encodeURIComponent(token);
+  return apiPublic<{ nonce: string; message: string }>(
+    `/auth/wallet/phantom-bridge/session?token=${q}`,
+  );
+}
+
+export function phantomBridgeLink(payload: {
+  token: string;
+  wallet_address: string;
+  signature: string;
+  nonce: string;
+}) {
+  return apiPublic<User>('/auth/wallet/phantom-bridge/link', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
 export function fetchFeed() {
   return api<FeedResponse>('/feed/friends');
 }

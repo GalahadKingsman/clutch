@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { walletLink, walletNonce } from '../lib/api';
+import { fetchMe, phantomBridgePrepare, walletLink, walletNonce } from '../lib/api';
 import { SOLANA_WALLET_OPTIONS } from '../lib/appkit-init';
 import { useAppKitInit } from './AppKitInitProvider';
 import { useClutchWallet, useSolanaWalletConnect } from '../lib/use-clutch-wallet';
@@ -34,6 +34,7 @@ export function WalletGateConnect({ onLinked }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [pendingAddr, setPendingAddr] = useState<string | null>(null);
+  const [awaitingPhantom, setAwaitingPhantom] = useState(false);
   const finishing = useRef(false);
   const providerRef = useRef(walletProvider);
   providerRef.current = walletProvider;
@@ -41,6 +42,7 @@ export function WalletGateConnect({ onLinked }: Props) {
   const cancelConnect = useCallback(() => {
     closeWalletModal();
     setLinking(false);
+    setAwaitingPhantom(false);
     setStatus(null);
     setError(null);
   }, [closeWalletModal]);
@@ -119,21 +121,44 @@ export function WalletGateConnect({ onLinked }: Props) {
     onError: onWalletError,
   });
 
-  /** Telegram: свой WC-поток — модалка Reown «Not Detected» не используется. */
+  const checkPhantomLinked = useCallback(async () => {
+    setError(null);
+    try {
+      const u = await fetchMe();
+      if (u.wallet_linked) {
+        setAwaitingPhantom(false);
+        setLinking(false);
+        onLinked();
+        return;
+      }
+      setError('Кошелёк ещё не привязан. В Phantom нажми «Подключить» и подпиши сообщение.');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось проверить');
+    }
+  }, [onLinked]);
+
+  /** Telegram: Phantom — in-app браузер; остальные — WalletConnect deep link. */
   const connectInTelegram = useCallback(
     async (walletId: (typeof SOLANA_WALLET_OPTIONS)[number]['id']) => {
       closeWalletModal();
       setLinking(true);
       setError(null);
-      const target = toTelegramTarget(walletId);
+      setAwaitingPhantom(false);
 
       try {
-        setStatus(
-          walletId === 'phantom'
-            ? 'Открываем Phantom… Подтверди подключение в приложении'
-            : `Открываем ${walletId}…`,
-        );
+        if (walletId === 'phantom') {
+          setStatus('Открываем CLUTCH в Phantom…');
+          const { phantom_url } = await phantomBridgePrepare();
+          setAwaitingPhantom(true);
+          setStatus(
+            '1) Подтверди подключение в Phantom\n2) Подпиши сообщение\n3) Вернись в Telegram → «Проверить»',
+          );
+          openWalletHref(phantom_url);
+          return;
+        }
 
+        const target = toTelegramTarget(walletId);
+        setStatus(`Открываем ${walletId}…`);
         const addr = await connectTelegramSolanaWallet(target);
         setPendingAddr(addr);
         setStatus('Подпись в кошельке…');
@@ -148,9 +173,10 @@ export function WalletGateConnect({ onLinked }: Props) {
         setError(
           e instanceof Error
             ? e.message
-            : 'Не удалось подключить кошелёк. Вернись в Telegram после подтверждения в Phantom.',
+            : 'Не удалось подключить кошелёк.',
         );
         setLinking(false);
+        setAwaitingPhantom(false);
       }
     },
     [closeWalletModal, onLinked],
@@ -259,12 +285,21 @@ export function WalletGateConnect({ onLinked }: Props) {
         ))}
       </div>
 
+      {awaitingPhantom && (
+        <button
+          type="button"
+          className="mt-4 w-full max-w-sm rounded-xl bg-green py-3 text-sm font-extrabold text-[#053022]"
+          onClick={() => void checkPhantomLinked()}
+        >
+          Проверить привязку
+        </button>
+      )}
+
       <p className="mt-4 text-xs text-mut">
         {inTelegram ? (
           <>
-            В Telegram Phantom открывается <strong className="text-ink">напрямую</strong>
-            , без экрана «Not Detected». После подтверждения в кошельке вернись в
-            CLUTCH.
+            Phantom: откроется <strong className="text-ink">сайт CLUTCH внутри Phantom</strong>
+            — там будет запрос на подключение (как в обычном dApp).
           </>
         ) : (
           <>

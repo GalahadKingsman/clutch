@@ -71,7 +71,8 @@ export function fixWalletConnectHref(href: string): string {
 /** Universal link Phantom + WalletConnect (iOS/Android). */
 export function phantomWalletConnectUrl(wcUri: string): string {
   const uri = wcUri.startsWith('wc:') ? wcUri : decodeURIComponent(wcUri);
-  return `https://phantom.app/ul/v1/wc?uri=${encodeURIComponent(uri)}`;
+  const appUrl = import.meta.env.VITE_APP_URL || 'https://clutch-duel.ru';
+  return `https://phantom.app/ul/browse/${encodeURIComponent(uri)}?ref=${encodeURIComponent(appUrl)}`;
 }
 
 export function metamaskWalletConnectUrl(wcUri: string): string {

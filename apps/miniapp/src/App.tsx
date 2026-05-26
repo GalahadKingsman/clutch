@@ -18,6 +18,7 @@ import { ArbitrationPage } from './pages/ArbitrationPage';
 import { VerdictPage } from './pages/VerdictPage';
 import { WalletPage } from './pages/WalletPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { TgWalletPage } from './pages/TgWalletPage';
 
 function isSecureContext(): boolean {
   if (typeof window === 'undefined') return true;
@@ -29,6 +30,10 @@ function isSecureContext(): boolean {
 }
 
 export default function App() {
+  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/tg-wallet')) {
+    return <TgWalletPage />;
+  }
+
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

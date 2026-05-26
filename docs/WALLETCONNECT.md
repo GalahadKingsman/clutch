@@ -75,4 +75,6 @@ MetaMask должен иметь включённый **Solana** в настро
 
 В Telegram WebView Phantom **не определяется** как расширение — модалка Reown «Not Detected» / App Store — это ложь.
 
-**CLUTCH в Telegram:** модалка Reown **не используется**. Своя сессия WalletConnect → сразу `openLink` в установленный Phantom. После подтверждения в кошельке — вернись в Telegram.
+**CLUTCH в Telegram + Phantom:** открывается **сайт CLUTCH внутри браузера Phantom** (официальный deeplink `ul/browse`). Там появится запрос «Подключить» — как в обычном dApp. После подписи вернись в Telegram и нажми **«Проверить привязку»**.
+
+На VPS: `MINIAPP_PUBLIC_URL=https://clutch-duel.ru` (тот же домен, что в BotFather).

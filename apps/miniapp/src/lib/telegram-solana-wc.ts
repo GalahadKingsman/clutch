@@ -61,6 +61,7 @@ async function getProvider(): Promise<UniversalProvider> {
   provider = await UniversalProvider.init({
     projectId,
     metadata: appMetadata(),
+    customStoragePrefix: 'clutch-telegram-wc',
   });
   return provider;
 }
@@ -89,10 +90,10 @@ export async function connectTelegramSolanaWallet(
     p.on('display_uri', onUri);
 
     p.connect({
-      optionalNamespaces: {
+      requiredNamespaces: {
         solana: {
           methods: ['solana_signMessage', 'solana_signTransaction'],
-          chains: [chain],
+          chains: [chain, SOLANA_MAINNET, SOLANA_DEVNET],
           events: [],
         },
       },

@@ -87,12 +87,15 @@ func main() {
 
 	r.Route("/api/v1", func(api chi.Router) {
 		api.Post("/auth/telegram", authH.Telegram)
+		api.Get("/auth/wallet/phantom-bridge/session", authH.PhantomBridgeSession)
+		api.Post("/auth/wallet/phantom-bridge/link", authH.PhantomBridgeLink)
 
 		api.Group(func(protected chi.Router) {
 			protected.Use(middleware.Authenticate(cfg.JWTSecret))
 			protected.Get("/auth/me", authH.Me)
 			protected.Post("/auth/wallet/nonce", authH.WalletNonce)
 			protected.Post("/auth/wallet/link", authH.WalletLink)
+			protected.Post("/auth/wallet/phantom-bridge", authH.PhantomBridgePrepare)
 
 			protected.Group(func(locked chi.Router) {
 				locked.Use(middleware.RequireWallet(users))
