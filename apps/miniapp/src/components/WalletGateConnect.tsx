@@ -3,6 +3,7 @@ import { walletLink, walletNonce } from '../lib/api';
 import { SOLANA_WALLET_OPTIONS } from '../lib/appkit-init';
 import { useAppKitInit } from './AppKitInitProvider';
 import { useClutchWallet, useSolanaWalletConnect } from '../lib/use-clutch-wallet';
+import { waitFor } from '../lib/wallet-address';
 
 type Props = {
   onLinked: () => void;
@@ -10,37 +11,67 @@ type Props = {
 
 export function WalletGateConnect({ onLinked }: Props) {
   const { configured, error: initError } = useAppKitInit();
-  const { address, isConnected, signAuthMessage, walletProvider } =
-    useClutchWallet();
+  const { address, isConnected, walletProvider } = useClutchWallet();
   const [linking, setLinking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [pendingAddr, setPendingAddr] = useState<string | null>(null);
   const finishing = useRef(false);
+  const providerRef = useRef(walletProvider);
+  providerRef.current = walletProvider;
 
-  const finishLink = useCallback(async () => {
-    if (finishing.current || !address || !walletProvider) return;
-    finishing.current = true;
-    setStatus('Подпись в кошельке…');
-    try {
-      const { nonce, message } = await walletNonce();
-      const signature = await signAuthMessage(message);
-      await walletLink({
-        wallet_address: address,
-        signature,
-        nonce,
-      });
-      onLinked();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Ошибка привязки');
-      setLinking(false);
-    } finally {
-      finishing.current = false;
-    }
-  }, [address, onLinked, signAuthMessage, walletProvider]);
+  const completeLinkFlow = useCallback(
+    async (overrideAddress?: string) => {
+      const addr = overrideAddress ?? pendingAddr ?? address ?? undefined;
+      if (!addr || finishing.current) {
+        if (!addr) {
+          setError(
+            'Адрес Solana не получен. Подключи кошелёк с поддержкой Solana (лучше Phantom).',
+          );
+          setLinking(false);
+        }
+        return;
+      }
 
-  const onWalletConnected = useCallback(() => {
-    setStatus('Подпись в кошельке…');
-  }, []);
+      finishing.current = true;
+      setError(null);
+      setStatus('Подпись в кошельке…');
+
+      try {
+        const provider = await waitFor(() => providerRef.current, 25_000);
+        if (!provider.signMessage) {
+          throw new Error('Кошелёк не поддерживает подпись сообщений');
+        }
+
+        const { nonce, message } = await walletNonce();
+        const encoded = new TextEncoder().encode(message);
+        const sig = await provider.signMessage(encoded);
+        const signature = btoa(String.fromCharCode(...sig));
+
+        await walletLink({
+          wallet_address: addr,
+          signature,
+          nonce,
+        });
+        onLinked();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Ошибка привязки');
+        setLinking(false);
+      } finally {
+        finishing.current = false;
+      }
+    },
+    [address, onLinked, pendingAddr],
+  );
+
+  const onWalletConnected = useCallback(
+    (addr: string | null) => {
+      if (addr) setPendingAddr(addr);
+      setStatus('Подпись в кошельке…');
+      void completeLinkFlow(addr ?? undefined);
+    },
+    [completeLinkFlow],
+  );
 
   const onWalletError = useCallback((msg: string) => {
     setError(msg);
@@ -54,20 +85,24 @@ export function WalletGateConnect({ onLinked }: Props) {
   });
 
   useEffect(() => {
-    if (linking && isConnected && address && walletProvider) {
-      void finishLink();
+    if (linking && isConnected && address && !finishing.current) {
+      setPendingAddr(address);
+      void completeLinkFlow(address);
     }
-  }, [linking, isConnected, address, walletProvider, finishLink]);
+  }, [linking, isConnected, address, completeLinkFlow]);
 
   function pickWallet(walletId: (typeof SOLANA_WALLET_OPTIONS)[number]['id']) {
     if (!configured) {
       setError(initError ?? 'WalletConnect не настроен');
       return;
     }
+    if (walletId === 'trust') {
+      setStatus('Trust может не поддержать Solana devnet — попробуй Phantom');
+    }
     setError(null);
     setLinking(true);
     if (isConnected && address) {
-      void finishLink();
+      void completeLinkFlow(address);
       return;
     }
     const label =
@@ -77,6 +112,11 @@ export function WalletGateConnect({ onLinked }: Props) {
   }
 
   const busy = linking || isPending;
+  const showContinue =
+    linking &&
+    (pendingAddr || address) &&
+    !finishing.current &&
+    status?.includes('Подпись');
 
   return (
     <>
@@ -99,16 +139,36 @@ export function WalletGateConnect({ onLinked }: Props) {
             <span className="text-[10px] font-bold leading-tight text-mut">
               {w.label}
             </span>
+            {'hint' in w && w.hint && (
+              <span className="text-[9px] text-gold/80">{w.hint}</span>
+            )}
           </button>
         ))}
       </div>
 
-      <p className="mt-6 text-xs text-mut">
-        Phantom / Trust откроются в приложении кошелька.
+      <p className="mt-4 text-xs text-mut">
+        Рекомендуем <strong className="text-ink">Phantom</strong> для devnet.
+        Trust часто не поддерживает devnet (ошибка chains).
       </p>
+
+      {showContinue && (
+        <button
+          type="button"
+          className="mt-4 w-full max-w-sm rounded-xl bg-green py-3 text-sm font-extrabold text-[#053022]"
+          onClick={() => void completeLinkFlow()}
+        >
+          Продолжить привязку
+        </button>
+      )}
 
       {status && !error && (
         <p className="mt-3 text-sm font-semibold text-gold">{status}</p>
+      )}
+
+      {(pendingAddr || address) && linking && (
+        <p className="mt-2 break-all text-[10px] text-mut">
+          {pendingAddr ?? address}
+        </p>
       )}
 
       {error && (

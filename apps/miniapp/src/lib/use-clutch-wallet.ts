@@ -11,6 +11,7 @@ import {
 } from '@reown/appkit-adapter-solana/react';
 import { Transaction } from '@solana/web3.js';
 import type { SolanaWalletId } from './appkit-init';
+import { parseSolanaAddress } from './wallet-address';
 
 function signatureToBase64(sig: Uint8Array): string {
   return btoa(String.fromCharCode(...sig));
@@ -18,7 +19,7 @@ function signatureToBase64(sig: Uint8Array): string {
 
 export function useClutchWallet() {
   const { open } = useAppKit();
-  const { address, isConnected } = useAppKitAccount();
+  const { address, isConnected } = useAppKitAccount({ namespace: 'solana' });
   const { walletProvider } = useAppKitProvider<Provider>('solana');
   const { connection } = useAppKitConnection();
 
@@ -64,7 +65,7 @@ export function useClutchWallet() {
 }
 
 type WalletConnectCallbacks = {
-  onSuccess: () => void;
+  onSuccess: (address: string | null) => void;
   onError: (message: string) => void;
 };
 
@@ -75,8 +76,8 @@ export function useSolanaWalletConnect(callbacks: WalletConnectCallbacks) {
 
   const { connect, isReady, isPending } = useAppKitWallet({
     namespace: 'solana',
-    onSuccess: () => {
-      callbacksRef.current.onSuccess();
+    onSuccess: (data: unknown) => {
+      callbacksRef.current.onSuccess(parseSolanaAddress(data));
     },
     onError: (err: Error) => {
       callbacksRef.current.onError(err?.message || 'Ошибка подключения');

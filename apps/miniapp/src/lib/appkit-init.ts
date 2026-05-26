@@ -1,9 +1,14 @@
 import { createAppKit } from '@reown/appkit/react';
 import { SolanaAdapter } from '@reown/appkit-adapter-solana/react';
-import { solanaDevnet } from '@reown/appkit/networks';
+import { solana, solanaDevnet } from '@reown/appkit/networks';
 
 const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || '';
 const appUrl = import.meta.env.VITE_APP_URL || 'https://clutch-duel.ru';
+const useMainnet = import.meta.env.VITE_SOLANA_NETWORK === 'mainnet-beta';
+
+/** Trust часто не поддерживает devnet — для devnet основной кошелёк Phantom. */
+export const appKitNetworks = useMainnet ? [solana] : [solanaDevnet, solana];
+export const appKitDefaultNetwork = useMainnet ? solana : solanaDevnet;
 
 export const walletConnectConfigured = projectId.length > 0;
 
@@ -26,7 +31,8 @@ export function initAppKit(): { ok: boolean; error?: string } {
     const solanaAdapter = new SolanaAdapter();
     createAppKit({
       adapters: [solanaAdapter],
-      networks: [solanaDevnet],
+      networks: appKitNetworks,
+      defaultNetwork: appKitDefaultNetwork,
       projectId,
       metadata: {
         name: 'CLUTCH',
@@ -59,11 +65,13 @@ export const SOLANA_WALLET_OPTIONS = [
   {
     id: 'trust' as const,
     label: 'Trust',
+    hint: useMainnet ? undefined : 'devnet?',
     icon: 'https://avatars.githubusercontent.com/u/37784833?s=200&v=4',
   },
   {
     id: 'metamask' as const,
     label: 'MetaMask',
+    hint: 'Solana',
     icon: 'https://avatars.githubusercontent.com/u/11744586?s=200&v=4',
   },
   {

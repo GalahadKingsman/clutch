@@ -46,3 +46,19 @@ docker compose -f docker-compose.yml -f docker-compose.ssl.yml up -d nginx
 - `https://www.clutch-duel.ru` (если используешь)
 
 Без этого WC может не открываться в Telegram WebView.
+
+## 6. Известные проблемы кошельков
+
+### Trust: «Some of the required chains are not supported yet»
+
+На **Solana devnet** Trust Wallet через WalletConnect часто **не поддерживает** сеть. Для тестов используй **Phantom** (иконка первая).
+
+На mainnet (`VITE_SOLANA_NETWORK=mainnet-beta`) Trust обычно работает.
+
+### MetaMask / другие: подключилось, но экран привязки не уходит
+
+Исправлено в miniapp: адрес берётся из namespace `solana`, после WC ожидается `walletProvider` и автоматически запрашивается SIWS.
+
+Если кошелёк вернулся в Mini App без подписи — нажми **«Продолжить привязку»**.
+
+MetaMask должен иметь включённый **Solana** в настройках; иначе адрес Solana не придёт.
