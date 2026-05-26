@@ -83,7 +83,9 @@ make redeploy-backend
 make redeploy-miniapp
 ```
 
-**Белый экран в Telegram?** Почти всегда nginx без собранного фронта. На VPS:
+**Белый экран в Telegram, а в браузере «Открой через Telegram»?** → **нет HTTPS**. Telegram Mini App работает только по `https://`. См. [docs/HTTPS_TELEGRAM.md](docs/HTTPS_TELEGRAM.md).
+
+**Белый экран везде?** Почти всегда nginx без собранного фронта. На VPS:
 
 ```bash
 make redeploy-backend   # пересоберёт api + nginx (miniapp внутри Docker)
@@ -95,7 +97,7 @@ curl -s https://YOUR_DOMAIN/health
 docker compose logs api --tail 30
 ```
 
-Nginx слушает порт **80** (`HTTP_PORT` в `.env`). Для HTTPS поставь Certbot перед nginx или используй Cloudflare.
+Nginx по умолчанию слушает **80**. HTTPS: Certbot на VPS + [docs/CERTBOT_VPS.md](docs/CERTBOT_VPS.md) или Cloudflare — [docs/HTTPS_TELEGRAM.md](docs/HTTPS_TELEGRAM.md).
 
 ### 5. Solana program (devnet)
 

@@ -93,6 +93,8 @@ export function setToken(token: string) {
   localStorage.setItem('clutch_token', token);
 }
 
+const API_TIMEOUT_MS = 20_000;
+
 export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -101,7 +103,23 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  const ctrl = new AbortController();
+  const timer = window.setTimeout(() => ctrl.abort(), API_TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers,
+      signal: ctrl.signal,
+    });
+  } catch (e) {
+    if (e instanceof Error && e.name === 'AbortError') {
+      throw new Error('Сервер не отвечает. Проверьте API и HTTPS.');
+    }
+    throw e;
+  } finally {
+    window.clearTimeout(timer);
+  }
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
     const err = body as { error?: string; message?: string };
