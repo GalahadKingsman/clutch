@@ -10,7 +10,7 @@ import {
   type Provider,
 } from '@reown/appkit-adapter-solana/react';
 import { Transaction } from '@solana/web3.js';
-import type { SolanaWalletId } from './appkit-config';
+import type { SolanaWalletId } from './appkit-init';
 
 function signatureToBase64(sig: Uint8Array): string {
   return btoa(String.fromCharCode(...sig));

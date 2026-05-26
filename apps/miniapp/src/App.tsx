@@ -6,6 +6,8 @@ import {
   telegramPlatform,
   waitForInitData,
 } from './lib/telegram';
+import { AppKitInitProvider } from './components/AppKitInitProvider';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { WalletGate } from './components/WalletGate';
 import { AppLayout } from './components/AppLayout';
 import { FeedPage } from './pages/FeedPage';
@@ -116,13 +118,25 @@ export default function App() {
     );
   }
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center px-6 text-center text-sm text-red">
+        Не удалось загрузить профиль. Перезапусти Mini App.
+      </div>
+    );
+  }
 
   if (!user.wallet_linked) {
-    return <WalletGate onLinked={refreshUser} />;
+    return (
+      <AppKitInitProvider>
+        <WalletGate onLinked={refreshUser} />
+      </AppKitInitProvider>
+    );
   }
 
   return (
+    <AppKitInitProvider>
+    <ErrorBoundary>
     <BrowserRouter>
       <Routes>
         <Route element={<AppLayout />}>
@@ -139,5 +153,7 @@ export default function App() {
         <Route path="*" element={<Navigate to="/feed" replace />} />
       </Routes>
     </BrowserRouter>
+    </ErrorBoundary>
+    </AppKitInitProvider>
   );
 }

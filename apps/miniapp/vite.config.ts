@@ -13,11 +13,19 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['buffer'],
+    include: [
+      'buffer',
+      '@reown/appkit/react',
+      '@reown/appkit-adapter-solana/react',
+      '@reown/appkit-wallet-button/react',
+    ],
   },
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    commonjsOptions: {
+      transformMixedEsModules: true,
+    },
   },
   server: {
     port: 5173,
