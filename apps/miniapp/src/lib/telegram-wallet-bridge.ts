@@ -79,6 +79,11 @@ export function metamaskWalletConnectUrl(wcUri: string): string {
   return `https://metamask.app.link/wc?uri=${encodeURIComponent(uri)}`;
 }
 
+export function trustWalletConnectUrl(wcUri: string): string {
+  const uri = wcUri.startsWith('wc:') ? wcUri : decodeURIComponent(wcUri);
+  return `https://link.trustwallet.com/wc?uri=${encodeURIComponent(uri)}`;
+}
+
 /** Открыть ссылку кошелька в Telegram (или fallback). */
 export function openWalletHref(href: string): void {
   const url = fixWalletConnectHref(href);

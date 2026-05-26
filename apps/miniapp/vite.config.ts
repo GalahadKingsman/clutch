@@ -18,6 +18,7 @@ export default defineConfig({
       '@reown/appkit/react',
       '@reown/appkit-adapter-solana/react',
       '@reown/appkit-wallet-button/react',
+      '@walletconnect/universal-provider',
     ],
   },
   build: {

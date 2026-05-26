@@ -48,12 +48,6 @@ export function initAppKit(): { ok: boolean; error?: string } {
       },
       enableWalletConnect: true,
       enableMobileFullScreen: isTelegramWebApp(),
-      featuredWalletIds: [
-        'a797aa35c0f9fc1cd76a3d8edde46704124b571e', // Phantom
-      ],
-      ...(isTelegramWebApp() && {
-        enableMobileWalletSelection: true,
-      }),
       themeMode: 'dark',
       themeVariables: {
         '--w3m-z-index': '10000',

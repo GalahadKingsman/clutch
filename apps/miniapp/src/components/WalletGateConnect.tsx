@@ -5,11 +5,10 @@ import { useAppKitInit } from './AppKitInitProvider';
 import { useClutchWallet, useSolanaWalletConnect } from '../lib/use-clutch-wallet';
 import { isTelegramWebApp } from '../lib/telegram';
 import {
-  openWalletHref,
-  useTelegramDirectWalletConnect,
-} from '../lib/telegram-wallet-bridge';
-import { watchAndOpenPhantom } from '../lib/telegram-wc-watcher';
-import { useTelegramWalletUriRelay } from '../lib/use-telegram-wc-relay';
+  connectTelegramSolanaWallet,
+  signTelegramSolanaMessage,
+  type TelegramWalletTarget,
+} from '../lib/telegram-solana-wc';
 import { waitFor } from '../lib/wallet-address';
 
 const CONNECT_TIMEOUT_MS = 90_000;
@@ -18,7 +17,16 @@ type Props = {
   onLinked: () => void;
 };
 
+function toTelegramTarget(
+  walletId: (typeof SOLANA_WALLET_OPTIONS)[number]['id'],
+): TelegramWalletTarget {
+  if (walletId === 'metamask') return 'metamask';
+  if (walletId === 'trust') return 'trust';
+  return 'phantom';
+}
+
 export function WalletGateConnect({ onLinked }: Props) {
+  const inTelegram = isTelegramWebApp();
   const { configured, error: initError } = useAppKitInit();
   const { address, isConnected, walletProvider, closeWalletModal } =
     useClutchWallet();
@@ -26,20 +34,13 @@ export function WalletGateConnect({ onLinked }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [pendingAddr, setPendingAddr] = useState<string | null>(null);
-  const [relayWallet, setRelayWallet] = useState<'phantom' | 'metamask' | null>(
-    null,
-  );
   const finishing = useRef(false);
-  const stopWcWatch = useRef<(() => void) | null>(null);
   const providerRef = useRef(walletProvider);
   providerRef.current = walletProvider;
 
   const cancelConnect = useCallback(() => {
-    stopWcWatch.current?.();
-    stopWcWatch.current = null;
     closeWalletModal();
     setLinking(false);
-    setRelayWallet(null);
     setStatus(null);
     setError(null);
   }, [closeWalletModal]);
@@ -48,9 +49,7 @@ export function WalletGateConnect({ onLinked }: Props) {
     async (overrideAddress?: string) => {
       const addr = overrideAddress ?? pendingAddr ?? address ?? undefined;
       if (!addr || finishing.current) {
-        if (!addr && linking) {
-          return;
-        }
+        if (!addr && linking) return;
         if (!addr) {
           setError(
             'Адрес Solana не получен. Подключи Phantom или включи Solana в MetaMask.',
@@ -66,21 +65,25 @@ export function WalletGateConnect({ onLinked }: Props) {
       closeWalletModal();
 
       try {
-        const provider = await waitFor(() => providerRef.current, 25_000);
-        if (!provider.signMessage) {
-          throw new Error('Кошелёк не поддерживает подпись сообщений');
+        let signature: string;
+
+        if (inTelegram) {
+          const { nonce, message } = await walletNonce();
+          const sig = await signTelegramSolanaMessage(message);
+          signature = btoa(String.fromCharCode(...sig));
+          await walletLink({ wallet_address: addr, signature, nonce });
+        } else {
+          const provider = await waitFor(() => providerRef.current, 25_000);
+          if (!provider.signMessage) {
+            throw new Error('Кошелёк не поддерживает подпись сообщений');
+          }
+          const { nonce, message } = await walletNonce();
+          const encoded = new TextEncoder().encode(message);
+          const sig = await provider.signMessage(encoded);
+          signature = btoa(String.fromCharCode(...sig));
+          await walletLink({ wallet_address: addr, signature, nonce });
         }
 
-        const { nonce, message } = await walletNonce();
-        const encoded = new TextEncoder().encode(message);
-        const sig = await provider.signMessage(encoded);
-        const signature = btoa(String.fromCharCode(...sig));
-
-        await walletLink({
-          wallet_address: addr,
-          signature,
-          nonce,
-        });
         onLinked();
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Ошибка привязки');
@@ -89,7 +92,7 @@ export function WalletGateConnect({ onLinked }: Props) {
         finishing.current = false;
       }
     },
-    [address, closeWalletModal, linking, onLinked, pendingAddr],
+    [address, closeWalletModal, inTelegram, linking, onLinked, pendingAddr],
   );
 
   const onWalletConnected = useCallback(
@@ -104,7 +107,6 @@ export function WalletGateConnect({ onLinked }: Props) {
   const onWalletError = useCallback(
     (msg: string) => {
       closeWalletModal();
-      setRelayWallet(null);
       setError(msg);
       setLinking(false);
       setStatus(null);
@@ -117,18 +119,52 @@ export function WalletGateConnect({ onLinked }: Props) {
     onError: onWalletError,
   });
 
-  useTelegramWalletUriRelay(linking || isPending, relayWallet);
+  /** Telegram: свой WC-поток — модалка Reown «Not Detected» не используется. */
+  const connectInTelegram = useCallback(
+    async (walletId: (typeof SOLANA_WALLET_OPTIONS)[number]['id']) => {
+      closeWalletModal();
+      setLinking(true);
+      setError(null);
+      const target = toTelegramTarget(walletId);
+
+      try {
+        setStatus(
+          walletId === 'phantom'
+            ? 'Открываем Phantom… Подтверди подключение в приложении'
+            : `Открываем ${walletId}…`,
+        );
+
+        const addr = await connectTelegramSolanaWallet(target);
+        setPendingAddr(addr);
+        setStatus('Подпись в кошельке…');
+
+        const { nonce, message } = await walletNonce();
+        const sig = await signTelegramSolanaMessage(message);
+        const signature = btoa(String.fromCharCode(...sig));
+
+        await walletLink({ wallet_address: addr, signature, nonce });
+        onLinked();
+      } catch (e) {
+        setError(
+          e instanceof Error
+            ? e.message
+            : 'Не удалось подключить кошелёк. Вернись в Telegram после подтверждения в Phantom.',
+        );
+        setLinking(false);
+      }
+    },
+    [closeWalletModal, onLinked],
+  );
 
   useEffect(() => {
-    if (linking && isConnected && address && !finishing.current) {
+    if (!inTelegram && linking && isConnected && address && !finishing.current) {
       setPendingAddr(address);
       void completeLinkFlow(address);
     }
-  }, [linking, isConnected, address, completeLinkFlow]);
+  }, [inTelegram, linking, isConnected, address, completeLinkFlow]);
 
-  /** После возврата из кошелька в Telegram — догоняем сессию WC. */
   useEffect(() => {
-    if (!linking) return;
+    if (!linking || inTelegram) return;
 
     const onVisible = () => {
       if (document.visibilityState !== 'visible') return;
@@ -141,36 +177,35 @@ export function WalletGateConnect({ onLinked }: Props) {
 
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
-  }, [linking, isConnected, address, completeLinkFlow]);
+  }, [linking, inTelegram, isConnected, address, completeLinkFlow]);
 
-  /** Таймаут «бесконечной» модалки Reown. */
   useEffect(() => {
-    if (!linking && !isPending) return;
+    if (!linking || inTelegram) return;
+    if (!isPending) return;
 
     const timer = window.setTimeout(() => {
       closeWalletModal();
       setLinking(false);
-      setError(
-        isTelegramWebApp()
-          ? 'Не удалось подключить кошелёк. Полностью закрой приложение кошелька, открой CLUTCH снова и нажми Phantom. MetaMask в Telegram часто зависает.'
-          : 'Таймаут подключения. Попробуй снова или выбери другой кошелёк.',
-      );
+      setError('Таймаут подключения. Попробуй снова.');
       setStatus(null);
     }, CONNECT_TIMEOUT_MS);
 
     return () => window.clearTimeout(timer);
-  }, [linking, isPending, closeWalletModal]);
+  }, [linking, inTelegram, isPending, closeWalletModal]);
 
   function pickWallet(walletId: (typeof SOLANA_WALLET_OPTIONS)[number]['id']) {
     if (!configured) {
       setError(initError ?? 'WalletConnect не настроен');
       return;
     }
+
+    if (inTelegram) {
+      void connectInTelegram(walletId);
+      return;
+    }
+
     setError(null);
     setLinking(true);
-    setRelayWallet(
-      walletId === 'phantom' || walletId === 'metamask' ? walletId : null,
-    );
 
     if (isConnected && address) {
       void completeLinkFlow(address);
@@ -179,38 +214,18 @@ export function WalletGateConnect({ onLinked }: Props) {
 
     if (walletId === 'trust') {
       setStatus('Trust может не поддержать Solana devnet — попробуй Phantom');
-    }
-
-    const label =
-      SOLANA_WALLET_OPTIONS.find((w) => w.id === walletId)?.label ?? walletId;
-    if (walletId !== 'trust') {
+    } else {
+      const label =
+        SOLANA_WALLET_OPTIONS.find((w) => w.id === walletId)?.label ?? walletId;
       setStatus(`Открываем ${label}…`);
-    }
-
-    if (walletId === 'walletConnect' && isTelegramWebApp()) {
-      setStatus('Сканируй QR в Phantom (Настройки → WalletConnect)');
-    }
-
-    /** В Telegram connect('phantom') → ложный «Not Detected» и App Store. */
-    if (useTelegramDirectWalletConnect(walletId)) {
-      setStatus(
-        walletId === 'phantom'
-          ? 'Открываем Phantom… (установленный кошелёк)'
-          : `Открываем ${label}…`,
-      );
-      stopWcWatch.current?.();
-      if (walletId === 'phantom') {
-        stopWcWatch.current = watchAndOpenPhantom();
-      }
-      connectWallet('walletConnect');
-      return;
     }
 
     connectWallet(walletId);
   }
 
-  const busy = linking || isPending;
+  const busy = linking || (!inTelegram && isPending);
   const showContinue =
+    !inTelegram &&
     linking &&
     (pendingAddr || address) &&
     !finishing.current &&
@@ -223,7 +238,7 @@ export function WalletGateConnect({ onLinked }: Props) {
           <button
             key={w.id}
             type="button"
-            disabled={busy || !configured || !isReady}
+            disabled={busy || !configured || (!inTelegram && !isReady)}
             onClick={() => pickWallet(w.id)}
             className="flex flex-col items-center gap-2 disabled:opacity-50"
           >
@@ -245,11 +260,11 @@ export function WalletGateConnect({ onLinked }: Props) {
       </div>
 
       <p className="mt-4 text-xs text-mut">
-        {isTelegramWebApp() ? (
+        {inTelegram ? (
           <>
-            В Telegram нажми <strong className="text-ink">Phantom</strong> — откроется
-            установленное приложение (не App Store). Если не сработало — кнопка ниже
-            или QR.
+            В Telegram Phantom открывается <strong className="text-ink">напрямую</strong>
+            , без экрана «Not Detected». После подтверждения в кошельке вернись в
+            CLUTCH.
           </>
         ) : (
           <>
@@ -259,36 +274,13 @@ export function WalletGateConnect({ onLinked }: Props) {
         )}
       </p>
 
-      {isTelegramWebApp() && (linking || isPending) && (
-        <button
-          type="button"
-          className="mt-4 w-full max-w-sm rounded-xl border border-gold/40 bg-gold/10 py-3 text-sm font-bold text-gold"
-          onClick={() => {
-            stopWcWatch.current?.();
-            stopWcWatch.current = watchAndOpenPhantom();
-            const anchors = document.querySelectorAll<HTMLAnchorElement>(
-              'a[href*="wc"], a[href*="phantom.app"]',
-            );
-            for (const a of anchors) {
-              if (a.href) {
-                openWalletHref(a.href);
-                return;
-              }
-            }
-            setStatus('Ищем сессию… откроется Phantom через 1–2 сек');
-          }}
-        >
-          Открыть установленный Phantom
-        </button>
-      )}
-
-      {(linking || isPending) && (
+      {linking && (
         <button
           type="button"
           className="mt-4 text-sm font-semibold text-mut underline"
           onClick={cancelConnect}
         >
-          Отменить подключение
+          Отменить
         </button>
       )}
 
