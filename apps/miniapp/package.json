@@ -11,6 +11,7 @@
   "dependencies": {
     "@reown/appkit": "^1.7.2",
     "@reown/appkit-adapter-solana": "^1.7.2",
+    "@reown/appkit-wallet-button": "^1.2.0",
     "@solana/web3.js": "^1.98.0",
     "buffer": "^6.0.3",
     "@telegram-apps/sdk-react": "^2.0.0",

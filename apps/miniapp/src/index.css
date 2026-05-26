@@ -18,3 +18,8 @@ body {
 #root {
   min-height: 100vh;
 }
+
+/* Reown AppKit modal above Telegram chrome */
+w3m-modal {
+  z-index: 10000 !important;
+}

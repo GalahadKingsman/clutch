@@ -1,21 +1,24 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { walletLink, walletNonce } from '../lib/api';
-import { walletConnectConfigured } from '../lib/appkit-config';
-import { useClutchWallet } from '../lib/use-clutch-wallet';
+import {
+  SOLANA_WALLET_OPTIONS,
+  walletConnectConfigured,
+} from '../lib/appkit-config';
+import { useClutchWallet, useSolanaWalletConnect } from '../lib/use-clutch-wallet';
 
 type Props = {
   onLinked: () => void;
 };
 
 export function WalletGate({ onLinked }: Props) {
-  const { address, isConnected, openWalletModal, signAuthMessage, walletProvider } =
+  const { address, isConnected, signAuthMessage, walletProvider } =
     useClutchWallet();
   const [linking, setLinking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const finishing = useRef(false);
 
-  async function finishLink() {
+  const finishLink = useCallback(async () => {
     if (finishing.current || !address || !walletProvider) return;
     finishing.current = true;
     setStatus('Подпись в кошельке…');
@@ -34,64 +37,96 @@ export function WalletGate({ onLinked }: Props) {
     } finally {
       finishing.current = false;
     }
-  }
+  }, [address, onLinked, signAuthMessage, walletProvider]);
+
+  const onWalletConnected = useCallback(() => {
+    setStatus('Подпись в кошельке…');
+  }, []);
+
+  const onWalletError = useCallback((msg: string) => {
+    setError(msg);
+    setLinking(false);
+    setStatus(null);
+  }, []);
+
+  const { connectWallet, isReady, isPending } = useSolanaWalletConnect({
+    onSuccess: onWalletConnected,
+    onError: onWalletError,
+  });
 
   useEffect(() => {
     if (linking && isConnected && address && walletProvider) {
       void finishLink();
     }
-  }, [linking, isConnected, address, walletProvider]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [linking, isConnected, address, walletProvider, finishLink]);
 
-  useEffect(() => {
-    if (!linking || isConnected) return;
-    const t = window.setTimeout(() => {
-      setLinking(false);
-      setStatus(null);
-      setError('Не удалось подключить кошелёк. Попробуй ещё раз.');
-    }, 120_000);
-    return () => window.clearTimeout(t);
-  }, [linking, isConnected]);
-
-  function startLink() {
+  function pickWallet(walletId: (typeof SOLANA_WALLET_OPTIONS)[number]['id']) {
     if (!walletConnectConfigured()) {
       setError(
-        'Не задан VITE_WALLETCONNECT_PROJECT_ID. Добавь в .env и пересобери nginx.',
+        'Нет VITE_WALLETCONNECT_PROJECT_ID в .env. Пересобери nginx после правки.',
       );
       return;
     }
     setError(null);
     setLinking(true);
     if (isConnected && address) {
-      setStatus('Подпись в кошельке…');
       void finishLink();
       return;
     }
-    setStatus('Выбери кошелёк в окне WalletConnect…');
-    openWalletModal();
+    const label =
+      SOLANA_WALLET_OPTIONS.find((w) => w.id === walletId)?.label ?? walletId;
+    setStatus(`Открываем ${label}…`);
+    connectWallet(walletId);
   }
+
+  const busy = linking || isPending;
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-6 py-10 text-center">
       <p className="font-display text-2xl font-bold">clutch</p>
       <h1 className="mt-6 text-xl font-bold">Привязать кошелёк</h1>
       <p className="mt-3 max-w-xs text-sm font-semibold text-mut">
-        Без кошелька CLUTCH недоступен. Подключи Solana-кошелёк через
-        WalletConnect — Phantom, Trust и другие.
+        Выбери кошелёк Solana. Подключение через WalletConnect — как на gmgn.
       </p>
 
-      <button
-        type="button"
-        disabled={linking && !error}
-        onClick={() => startLink()}
-        className="mt-8 w-full max-w-sm rounded-2xl bg-gradient-to-b from-[#5C88FF] to-[#4068E8] py-4 text-base font-extrabold text-white shadow-[0_5px_0_#2E51C4] disabled:opacity-60"
-      >
-        {linking ? 'Подключение…' : 'Подключить кошелёк'}
-      </button>
+      {!walletConnectConfigured() && (
+        <p className="mt-4 rounded-xl border border-red/30 bg-red/10 px-3 py-2 text-xs text-red">
+          Project ID не в сборке. Добавь VITE_WALLETCONNECT_PROJECT_ID в .env и
+          выполни build nginx.
+        </p>
+      )}
 
-      <p className="mt-4 text-xs text-mut">
-        1) Откроется окно WalletConnect → выбери Phantom (или другой)
+      {walletConnectConfigured() && !isReady && (
+        <p className="mt-4 text-xs text-gold">Загрузка WalletConnect…</p>
+      )}
+
+      <div className="mt-8 grid w-full max-w-sm grid-cols-4 gap-3">
+        {SOLANA_WALLET_OPTIONS.map((w) => (
+          <button
+            key={w.id}
+            type="button"
+            disabled={busy || !walletConnectConfigured()}
+            onClick={() => pickWallet(w.id)}
+            className="flex flex-col items-center gap-2 disabled:opacity-50"
+          >
+            <span className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-panel2">
+              <img
+                src={w.icon}
+                alt=""
+                className="h-10 w-10 rounded-xl object-cover"
+              />
+            </span>
+            <span className="text-[10px] font-bold leading-tight text-mut">
+              {w.label}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      <p className="mt-6 text-xs text-mut">
+        Phantom / Trust откроются в приложении кошелька.
         <br />
-        2) Подтверди подключение и подпись в кошельке
+        «QR / Другие» — список всех кошельков WalletConnect.
       </p>
 
       {status && !error && (
