@@ -1,0 +1,4 @@
+# nginx + уже собранный miniapp (dist с Mac/CI). Без npm run build на VPS.
+FROM nginx:1.27-alpine
+COPY deploy/nginx/nginx.conf /etc/nginx/nginx.conf
+COPY apps/miniapp/dist /usr/share/nginx/html

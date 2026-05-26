@@ -1,0 +1,7 @@
+# Переопределение: nginx без сборки Vite на VPS (нужен apps/miniapp/dist на хосте).
+# docker compose -f docker-compose.yml -f docker-compose.ssl.yml -f docker-compose.dist.yml build nginx
+services:
+  nginx:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.nginx.dist

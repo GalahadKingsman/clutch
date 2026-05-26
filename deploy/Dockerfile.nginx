@@ -1,4 +1,5 @@
 # nginx + production Mini App build (no host npm required on VPS)
+# На VPS <4 GB RAM сборка может «зависнуть» на rendering chunks — см. docs/DEPLOY_BUILD.md
 FROM node:20-alpine AS miniapp
 WORKDIR /build
 
@@ -14,8 +15,12 @@ ENV VITE_SOLANA_NETWORK=$VITE_SOLANA_NETWORK
 ENV VITE_SOLANA_RPC_URL=$VITE_SOLANA_RPC_URL
 ENV VITE_API_URL=$VITE_API_URL
 
+# Vite + Reown + WalletConnect — тяжёлая сборка; без лимита Node падает/виснет по OOM
+ENV NODE_OPTIONS=--max-old-space-size=2048
+ENV GENERATE_SOURCEMAP=false
+
 COPY apps/miniapp/package.json ./
-RUN npm install
+RUN npm install --no-audit --no-fund
 COPY apps/miniapp/ ./
 RUN npm run build
 

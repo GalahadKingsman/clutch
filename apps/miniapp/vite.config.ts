@@ -24,8 +24,26 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    sourcemap: false,
+    reportCompressedSize: false,
     commonjsOptions: {
       transformMixedEsModules: true,
+    },
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return;
+          if (
+            id.includes('@reown') ||
+            id.includes('@walletconnect') ||
+            id.includes('viem')
+          ) {
+            return 'wallet-vendor';
+          }
+          if (id.includes('@solana')) return 'solana-vendor';
+          return 'vendor';
+        },
+      },
     },
   },
   server: {
