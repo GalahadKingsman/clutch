@@ -73,4 +73,4 @@ MetaMask должен иметь включённый **Solana** в настро
 
 ### Phantom: «Not Detected» (кошелёк установлен)
 
-В Telegram WebView Phantom **не определяется** как расширение — это нормально. Нажми **«Открыть Phantom вручную»** под иконками или кнопку **Open** в модалке (ссылка идёт через `Telegram.WebApp.openLink`). Альтернатива: **QR** → в Phantom: меню → WalletConnect → сканировать.
+В Telegram WebView Phantom **не определяется** как расширение — Reown ошибочно ведёт в App Store. CLUTCH обходит это: при нажатии Phantom создаётся WC-сессия и открывается **установленный** Phantom через deep link (не App Store). Если не сработало — **«Открыть установленный Phantom»** или QR в модалке.

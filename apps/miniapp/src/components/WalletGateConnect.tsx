@@ -4,7 +4,11 @@ import { SOLANA_WALLET_OPTIONS } from '../lib/appkit-init';
 import { useAppKitInit } from './AppKitInitProvider';
 import { useClutchWallet, useSolanaWalletConnect } from '../lib/use-clutch-wallet';
 import { isTelegramWebApp } from '../lib/telegram';
-import { openWalletHref } from '../lib/telegram-wallet-bridge';
+import {
+  openWalletHref,
+  useTelegramDirectWalletConnect,
+} from '../lib/telegram-wallet-bridge';
+import { watchAndOpenPhantom } from '../lib/telegram-wc-watcher';
 import { useTelegramWalletUriRelay } from '../lib/use-telegram-wc-relay';
 import { waitFor } from '../lib/wallet-address';
 
@@ -26,10 +30,13 @@ export function WalletGateConnect({ onLinked }: Props) {
     null,
   );
   const finishing = useRef(false);
+  const stopWcWatch = useRef<(() => void) | null>(null);
   const providerRef = useRef(walletProvider);
   providerRef.current = walletProvider;
 
   const cancelConnect = useCallback(() => {
+    stopWcWatch.current?.();
+    stopWcWatch.current = null;
     closeWalletModal();
     setLinking(false);
     setRelayWallet(null);
@@ -184,6 +191,21 @@ export function WalletGateConnect({ onLinked }: Props) {
       setStatus('Сканируй QR в Phantom (Настройки → WalletConnect)');
     }
 
+    /** В Telegram connect('phantom') → ложный «Not Detected» и App Store. */
+    if (useTelegramDirectWalletConnect(walletId)) {
+      setStatus(
+        walletId === 'phantom'
+          ? 'Открываем Phantom… (установленный кошелёк)'
+          : `Открываем ${label}…`,
+      );
+      stopWcWatch.current?.();
+      if (walletId === 'phantom') {
+        stopWcWatch.current = watchAndOpenPhantom();
+      }
+      connectWallet('walletConnect');
+      return;
+    }
+
     connectWallet(walletId);
   }
 
@@ -223,15 +245,27 @@ export function WalletGateConnect({ onLinked }: Props) {
       </div>
 
       <p className="mt-4 text-xs text-mut">
-        Рекомендуем <strong className="text-ink">Phantom</strong> для devnet.
-        Trust часто не поддерживает devnet (ошибка chains).
+        {isTelegramWebApp() ? (
+          <>
+            В Telegram нажми <strong className="text-ink">Phantom</strong> — откроется
+            установленное приложение (не App Store). Если не сработало — кнопка ниже
+            или QR.
+          </>
+        ) : (
+          <>
+            Рекомендуем <strong className="text-ink">Phantom</strong> для devnet.
+            Trust часто не поддерживает devnet.
+          </>
+        )}
       </p>
 
-      {isTelegramWebApp() && (linking || isPending) && relayWallet === 'phantom' && (
+      {isTelegramWebApp() && (linking || isPending) && (
         <button
           type="button"
           className="mt-4 w-full max-w-sm rounded-xl border border-gold/40 bg-gold/10 py-3 text-sm font-bold text-gold"
           onClick={() => {
+            stopWcWatch.current?.();
+            stopWcWatch.current = watchAndOpenPhantom();
             const anchors = document.querySelectorAll<HTMLAnchorElement>(
               'a[href*="wc"], a[href*="phantom.app"]',
             );
@@ -241,13 +275,10 @@ export function WalletGateConnect({ onLinked }: Props) {
                 return;
               }
             }
-            setStatus(
-              'Если Phantom не открылся: Phantom → ≡ → WalletConnect → сканируй QR в модалке',
-            );
-            connectWallet('walletConnect');
+            setStatus('Ищем сессию… откроется Phantom через 1–2 сек');
           }}
         >
-          Открыть Phantom вручную
+          Открыть установленный Phantom
         </button>
       )}
 

@@ -19,6 +19,13 @@ function isWalletHref(href: string): boolean {
   );
 }
 
+function isAppStorePhantomLink(href: string): boolean {
+  return (
+    (href.includes('apps.apple.com') || href.includes('play.google.com')) &&
+    href.toLowerCase().includes('phantom')
+  );
+}
+
 function toUniversalWalletUrl(raw: string): string {
   if (raw.startsWith('https://') || raw.startsWith('http://')) {
     return raw;
@@ -61,10 +68,10 @@ export function fixWalletConnectHref(href: string): string {
   return url;
 }
 
-/** Universal link Phantom + WalletConnect. */
+/** Universal link Phantom + WalletConnect (iOS/Android). */
 export function phantomWalletConnectUrl(wcUri: string): string {
   const uri = wcUri.startsWith('wc:') ? wcUri : decodeURIComponent(wcUri);
-  return `https://phantom.app/ul/browse/${encodeURIComponent(uri)}`;
+  return `https://phantom.app/ul/v1/wc?uri=${encodeURIComponent(uri)}`;
 }
 
 export function metamaskWalletConnectUrl(wcUri: string): string {
@@ -118,13 +125,37 @@ export function installTelegramWalletBridge(): void {
     'click',
     (e) => {
       const anchor = (e.target as HTMLElement).closest('a');
-      if (!anchor?.href || !isWalletHref(anchor.href)) return;
+      if (!anchor?.href) return;
+
+      if (isAppStorePhantomLink(anchor.href)) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+
+      const label = (e.target as HTMLElement).textContent?.trim().toLowerCase();
+      if (
+        (label === 'get' || label === 'get >' || label?.startsWith('get ')) &&
+        (e.target as HTMLElement).closest('w3m-modal, w3m-connecting-wc-mobile')
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+
+      if (!isWalletHref(anchor.href)) return;
       e.preventDefault();
       e.stopPropagation();
       openWalletHref(anchor.href);
     },
     true,
   );
+}
+
+/** В Telegram нельзя полагаться на detect installed — только WC + deep link. */
+export function useTelegramDirectWalletConnect(walletId: string): boolean {
+  if (!isTelegramWebApp()) return false;
+  return walletId === 'phantom' || walletId === 'metamask' || walletId === 'trust';
 }
 
 /** Кошельки для UI: в Telegram mobile MetaMask/Trust почти всегда зависают. */
