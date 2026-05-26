@@ -6,7 +6,6 @@ import {
   type ReactNode,
 } from 'react';
 import { initAppKit, walletConnectConfigured } from '../lib/appkit-init';
-import { isTelegramWebApp } from '../lib/telegram';
 
 type AppKitState = {
   ready: boolean;
@@ -38,11 +37,6 @@ export function AppKitInitProvider({ children }: { children: ReactNode }) {
         configured: false,
         error: 'VITE_WALLETCONNECT_PROJECT_ID не в сборке',
       });
-      return;
-    }
-
-    if (isTelegramWebApp()) {
-      setState({ ready: true, configured: true, error: null });
       return;
     }
 
