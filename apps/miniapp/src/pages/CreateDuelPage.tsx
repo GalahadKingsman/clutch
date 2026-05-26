@@ -8,10 +8,12 @@ import {
   fetchFriends,
   type FriendCard,
 } from '../lib/api';
-import { sendBase64Transaction } from '../lib/solana';
+import { useClutchWallet } from '../lib/use-clutch-wallet';
+import { WalletConnectBanner } from '../components/WalletConnectBanner';
 
 export function CreateDuelPage() {
   const nav = useNavigate();
+  const { sendBase64Transaction } = useClutchWallet();
   const [friends, setFriends] = useState<FriendCard[]>([]);
   const [opponentId, setOpponentId] = useState('');
   const [condition, setCondition] = useState('');
@@ -73,6 +75,7 @@ export function CreateDuelPage() {
   return (
     <div className="px-4 pt-6">
       <h1 className="font-display text-xl font-bold">Новая дуэль</h1>
+      <WalletConnectBanner className="mt-3" />
       <form onSubmit={submit} className="mt-4 space-y-3">
         <label className="block text-xs font-extrabold uppercase text-mut">
           Соперник

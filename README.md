@@ -59,14 +59,21 @@ TELEGRAM_WEBHOOK_PUBLIC_URL=https://твой-домен.com/telegram/webhook
 TELEGRAM_WEBHOOK_SECRET=случайный-секрет
 ```
 
-### 3. BotFather (делаешь ты)
+### 3. WalletConnect (привязка кошелька в Mini App)
+
+1. [cloud.reown.com](https://cloud.reown.com) → Project ID  
+2. В `.env` на VPS: `VITE_WALLETCONNECT_PROJECT_ID=...`, `VITE_APP_URL=https://clutch-duel.ru`  
+3. В Reown → Allowed origins: `https://clutch-duel.ru`  
+4. Подробнее: [docs/WALLETCONNECT.md](docs/WALLETCONNECT.md)
+
+### 4. BotFather (делаешь ты)
 
 1. [@BotFather](https://t.me/BotFather) → твой бот `@clutch_game_bot`
 2. `/setdomain` → домен Mini App (тот же что `PUBLIC_URL`)
 3. `/setmenubutton` → Web App URL = `MINIAPP_PUBLIC_URL`
 4. Webhook секрет = `TELEGRAM_WEBHOOK_SECRET` (тот же в заголовке Telegram)
 
-### 4. Деплой
+### 5. Деплой
 
 ```bash
 # Полный деплой (miniapp build + backend + nginx)

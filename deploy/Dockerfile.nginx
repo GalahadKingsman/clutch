@@ -1,6 +1,19 @@
 # nginx + production Mini App build (no host npm required on VPS)
 FROM node:20-alpine AS miniapp
 WORKDIR /build
+
+ARG VITE_WALLETCONNECT_PROJECT_ID=
+ARG VITE_APP_URL=https://clutch-duel.ru
+ARG VITE_SOLANA_NETWORK=devnet
+ARG VITE_SOLANA_RPC_URL=https://api.devnet.solana.com
+ARG VITE_API_URL=/api/v1
+
+ENV VITE_WALLETCONNECT_PROJECT_ID=$VITE_WALLETCONNECT_PROJECT_ID
+ENV VITE_APP_URL=$VITE_APP_URL
+ENV VITE_SOLANA_NETWORK=$VITE_SOLANA_NETWORK
+ENV VITE_SOLANA_RPC_URL=$VITE_SOLANA_RPC_URL
+ENV VITE_API_URL=$VITE_API_URL
+
 COPY apps/miniapp/package.json ./
 RUN npm install
 COPY apps/miniapp/ ./

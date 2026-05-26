@@ -13,7 +13,8 @@ import {
   type DuelCard,
   type User,
 } from '../lib/api';
-import { sendBase64Transaction } from '../lib/solana';
+import { useClutchWallet } from '../lib/use-clutch-wallet';
+import { WalletConnectBanner } from '../components/WalletConnectBanner';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
 
@@ -26,6 +27,7 @@ type Props = { user: User };
 export function DuelRoomPage({ user }: Props) {
   const { id } = useParams<{ id: string }>();
   const nav = useNavigate();
+  const { sendBase64Transaction } = useClutchWallet();
   const [duel, setDuel] = useState<DuelCard | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [text, setText] = useState('');
@@ -139,6 +141,8 @@ export function DuelRoomPage({ user }: Props) {
       <p className="text-xs text-mut">
         Банк ${duel.bank_usd} · {duel.status}
       </p>
+
+      <WalletConnectBanner className="mt-3" />
 
       <div className="mt-3 flex flex-wrap gap-2">
         {isPending && (

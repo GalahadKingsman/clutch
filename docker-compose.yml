@@ -71,6 +71,12 @@ services:
     build:
       context: .
       dockerfile: deploy/Dockerfile.nginx
+      args:
+        VITE_WALLETCONNECT_PROJECT_ID: ${VITE_WALLETCONNECT_PROJECT_ID:-}
+        VITE_APP_URL: ${VITE_APP_URL:-https://clutch-duel.ru}
+        VITE_SOLANA_NETWORK: ${VITE_SOLANA_NETWORK:-devnet}
+        VITE_SOLANA_RPC_URL: ${VITE_SOLANA_RPC_URL:-https://api.devnet.solana.com}
+        VITE_API_URL: ${VITE_API_URL:-/api/v1}
     restart: unless-stopped
     ports:
       - "${HTTP_PORT:-80}:80"
