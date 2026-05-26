@@ -3,8 +3,7 @@ import { walletLink, walletNonce } from '../lib/api';
 import { SOLANA_WALLET_OPTIONS } from '../lib/appkit-init';
 import { useAppKitInit } from './AppKitInitProvider';
 import { useClutchWallet, useSolanaWalletConnect } from '../lib/use-clutch-wallet';
-import { isTelegramMobile, isTelegramWebApp } from '../lib/telegram';
-import { shouldHideWalletInTelegram } from '../lib/telegram-wallet-bridge';
+import { isTelegramWebApp } from '../lib/telegram';
 import { waitFor } from '../lib/wallet-address';
 
 const CONNECT_TIMEOUT_MS = 90_000;
@@ -24,10 +23,6 @@ export function WalletGateConnect({ onLinked }: Props) {
   const finishing = useRef(false);
   const providerRef = useRef(walletProvider);
   providerRef.current = walletProvider;
-
-  const walletOptions = SOLANA_WALLET_OPTIONS.filter(
-    (w) => !shouldHideWalletInTelegram(w.id),
-  );
 
   const cancelConnect = useCallback(() => {
     closeWalletModal();
@@ -155,11 +150,6 @@ export function WalletGateConnect({ onLinked }: Props) {
       setError(initError ?? 'WalletConnect не настроен');
       return;
     }
-    if (shouldHideWalletInTelegram(walletId)) {
-      setError('В Telegram используй Phantom или QR.');
-      return;
-    }
-
     setError(null);
     setLinking(true);
 
@@ -168,9 +158,15 @@ export function WalletGateConnect({ onLinked }: Props) {
       return;
     }
 
+    if (walletId === 'trust') {
+      setStatus('Trust может не поддержать Solana devnet — попробуй Phantom');
+    }
+
     const label =
       SOLANA_WALLET_OPTIONS.find((w) => w.id === walletId)?.label ?? walletId;
-    setStatus(`Открываем ${label}…`);
+    if (walletId !== 'trust') {
+      setStatus(`Открываем ${label}…`);
+    }
 
     if (walletId === 'walletConnect' && isTelegramWebApp()) {
       setStatus('Сканируй QR в Phantom (Настройки → WalletConnect)');
@@ -186,16 +182,10 @@ export function WalletGateConnect({ onLinked }: Props) {
     !finishing.current &&
     !isPending;
 
-  const inTgMobile = isTelegramWebApp() && isTelegramMobile();
-
   return (
     <>
-      <div
-        className={`mt-8 grid w-full max-w-sm gap-3 ${
-          walletOptions.length <= 2 ? 'grid-cols-2' : 'grid-cols-4'
-        }`}
-      >
-        {walletOptions.map((w) => (
+      <div className="mt-8 grid w-full max-w-sm grid-cols-4 gap-3">
+        {SOLANA_WALLET_OPTIONS.map((w) => (
           <button
             key={w.id}
             type="button"
@@ -220,20 +210,10 @@ export function WalletGateConnect({ onLinked }: Props) {
         ))}
       </div>
 
-      {inTgMobile && (
-        <p className="mt-4 max-w-sm text-xs text-mut">
-          В Telegram Mini App надёжно работает{' '}
-          <strong className="text-ink">Phantom</strong>. MetaMask и Trust здесь
-          скрыты — у них ломается возврат из приложения кошелька (бесконечная
-          загрузка).
-        </p>
-      )}
-
-      {!inTgMobile && (
-        <p className="mt-4 text-xs text-mut">
-          Для devnet лучше Phantom. Trust часто не поддерживает devnet.
-        </p>
-      )}
+      <p className="mt-4 text-xs text-mut">
+        Рекомендуем <strong className="text-ink">Phantom</strong> для devnet.
+        Trust часто не поддерживает devnet (ошибка chains).
+      </p>
 
       {(linking || isPending) && (
         <button
