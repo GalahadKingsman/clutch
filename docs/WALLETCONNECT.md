@@ -70,3 +70,7 @@ MetaMask должен иметь включённый **Solana** в настро
 **Решение в CLUTCH:** перехват ссылок через `Telegram.WebApp.openLink`, на мобильном Telegram показываются только **Phantom** и **QR**. MetaMask/Trust — в обычном браузере.
 
 Если всё же зависло: «Отменить подключение» → полностью закрыть MetaMask → снова **Phantom**.
+
+### Phantom: «Not Detected» (кошелёк установлен)
+
+В Telegram WebView Phantom **не определяется** как расширение — это нормально. Нажми **«Открыть Phantom вручную»** под иконками или кнопку **Open** в модалке (ссылка идёт через `Telegram.WebApp.openLink`). Альтернатива: **QR** → в Phantom: меню → WalletConnect → сканировать.

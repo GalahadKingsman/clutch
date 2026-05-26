@@ -47,6 +47,10 @@ export function initAppKit(): { ok: boolean; error?: string } {
         socials: false,
       },
       enableWalletConnect: true,
+      enableMobileFullScreen: isTelegramWebApp(),
+      featuredWalletIds: [
+        'a797aa35c0f9fc1cd76a3d8edde46704124b571e', // Phantom
+      ],
       ...(isTelegramWebApp() && {
         enableMobileWalletSelection: true,
       }),

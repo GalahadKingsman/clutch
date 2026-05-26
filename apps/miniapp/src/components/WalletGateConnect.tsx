@@ -4,6 +4,8 @@ import { SOLANA_WALLET_OPTIONS } from '../lib/appkit-init';
 import { useAppKitInit } from './AppKitInitProvider';
 import { useClutchWallet, useSolanaWalletConnect } from '../lib/use-clutch-wallet';
 import { isTelegramWebApp } from '../lib/telegram';
+import { openWalletHref } from '../lib/telegram-wallet-bridge';
+import { useTelegramWalletUriRelay } from '../lib/use-telegram-wc-relay';
 import { waitFor } from '../lib/wallet-address';
 
 const CONNECT_TIMEOUT_MS = 90_000;
@@ -20,6 +22,9 @@ export function WalletGateConnect({ onLinked }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [pendingAddr, setPendingAddr] = useState<string | null>(null);
+  const [relayWallet, setRelayWallet] = useState<'phantom' | 'metamask' | null>(
+    null,
+  );
   const finishing = useRef(false);
   const providerRef = useRef(walletProvider);
   providerRef.current = walletProvider;
@@ -27,6 +32,7 @@ export function WalletGateConnect({ onLinked }: Props) {
   const cancelConnect = useCallback(() => {
     closeWalletModal();
     setLinking(false);
+    setRelayWallet(null);
     setStatus(null);
     setError(null);
   }, [closeWalletModal]);
@@ -91,6 +97,7 @@ export function WalletGateConnect({ onLinked }: Props) {
   const onWalletError = useCallback(
     (msg: string) => {
       closeWalletModal();
+      setRelayWallet(null);
       setError(msg);
       setLinking(false);
       setStatus(null);
@@ -102,6 +109,8 @@ export function WalletGateConnect({ onLinked }: Props) {
     onSuccess: onWalletConnected,
     onError: onWalletError,
   });
+
+  useTelegramWalletUriRelay(linking || isPending, relayWallet);
 
   useEffect(() => {
     if (linking && isConnected && address && !finishing.current) {
@@ -152,6 +161,9 @@ export function WalletGateConnect({ onLinked }: Props) {
     }
     setError(null);
     setLinking(true);
+    setRelayWallet(
+      walletId === 'phantom' || walletId === 'metamask' ? walletId : null,
+    );
 
     if (isConnected && address) {
       void completeLinkFlow(address);
@@ -214,6 +226,30 @@ export function WalletGateConnect({ onLinked }: Props) {
         Рекомендуем <strong className="text-ink">Phantom</strong> для devnet.
         Trust часто не поддерживает devnet (ошибка chains).
       </p>
+
+      {isTelegramWebApp() && (linking || isPending) && relayWallet === 'phantom' && (
+        <button
+          type="button"
+          className="mt-4 w-full max-w-sm rounded-xl border border-gold/40 bg-gold/10 py-3 text-sm font-bold text-gold"
+          onClick={() => {
+            const anchors = document.querySelectorAll<HTMLAnchorElement>(
+              'a[href*="wc"], a[href*="phantom.app"]',
+            );
+            for (const a of anchors) {
+              if (a.href) {
+                openWalletHref(a.href);
+                return;
+              }
+            }
+            setStatus(
+              'Если Phantom не открылся: Phantom → ≡ → WalletConnect → сканируй QR в модалке',
+            );
+            connectWallet('walletConnect');
+          }}
+        >
+          Открыть Phantom вручную
+        </button>
+      )}
 
       {(linking || isPending) && (
         <button
