@@ -4,6 +4,7 @@ import { SOLANA_WALLET_OPTIONS } from '../lib/appkit-init';
 import { useAppKitInit } from './AppKitInitProvider';
 import { useClutchWallet, useSolanaWalletConnect } from '../lib/use-clutch-wallet';
 import { isTelegramWebApp } from '../lib/telegram';
+import { openWalletHref } from '../lib/telegram-wallet-bridge';
 import {
   connectTelegramSolanaWallet,
   signTelegramSolanaMessage,
